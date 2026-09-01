@@ -1,0 +1,20 @@
+# Normalize line endings to LF in the repository (matches .editorconfig)
+* text=auto eol=lf
+
+# Binary assets
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.ico binary
+*.mp3 binary
+*.mp4 binary
+*.woff binary
+*.woff2 binary
+*.glb binary
+*.gltf binary
+*.task binary
+*.wasm binary
+
+pnpm-lock.yaml linguist-generated=true -diff

@@ -1,0 +1,29 @@
+node_modules/
+.next/
+out/
+dist/
+build/
+
+# Self-hosted MediaPipe runtime and models (~7.7 MB binaries).
+# Populated by: pnpm vision:fetch
+public/vision/
+
+coverage/
+test-results/
+playwright-report/
+.vitest/
+
+.env
+.env.local
+.env.*.local
+
+.DS_Store
+Thumbs.db
+*.log
+.vercel
+.turbo
+*.tsbuildinfo
+
+# Phase 0 measurement output
+tools/spike/reports/
+tools/spike/fixtures/

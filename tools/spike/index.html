@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="robots" content="noindex, nofollow" />
+    <title>Bloom Delivery — Phase 0 Spike</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --ink: #111111;
+        --cream: #fff8e8;
+        --pink: #ff8fab;
+        --yellow: #ffe599;
+      }
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        padding: 12px;
+        background: var(--cream);
+        color: var(--ink);
+        font: 400 14px/1.5 ui-sans-serif, system-ui, sans-serif;
+      }
+      h1 { font-size: 16px; margin: 0 0 4px; }
+      .warn {
+        border: 3px solid var(--ink);
+        background: var(--yellow);
+        box-shadow: 4px 4px 0 var(--ink);
+        border-radius: 12px;
+        padding: 8px 12px;
+        margin: 0 0 12px;
+        font-size: 12px;
+      }
+      .layout { display: grid; gap: 12px; grid-template-columns: 1fr; }
+      @media (min-width: 1100px) { .layout { grid-template-columns: minmax(0, 1fr) 460px; } }
+      .stage { position: relative; border: 3px solid var(--ink); border-radius: 20px; overflow: hidden; background: #000; }
+      video, #overlay { display: block; width: 100%; }
+      video { transform: scaleX(-1); }
+      #overlay { position: absolute; inset: 0; pointer-events: none; }
+      .panel { display: flex; flex-direction: column; gap: 8px; }
+      .controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+      button, input, select {
+        font: inherit; font-size: 13px; padding: 8px 12px;
+        border: 3px solid var(--ink); border-radius: 12px; background: #fff; color: var(--ink);
+      }
+      button { background: var(--pink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; }
+      button:disabled { opacity: 0.5; box-shadow: none; cursor: not-allowed; }
+      #status { font-size: 12px; padding: 6px 10px; border: 3px solid var(--ink); border-radius: 12px; background: #fff; }
+      pre#hud {
+        margin: 0; padding: 12px; min-height: 420px;
+        border: 3px solid var(--ink); border-radius: 12px; background: #fff;
+        font: 400 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
+        white-space: pre; overflow: auto;
+      }
+      kbd { border: 2px solid var(--ink); border-radius: 6px; padding: 0 4px; font-size: 11px; background: #fff; }
+      .keys { font-size: 11px; line-height: 1.9; }
+    </style>
+  </head>
+  <body>
+    <h1>Bloom Delivery — Phase 0 feasibility spike</h1>
+    <p class="warn">
+      <strong>THROWAWAY.</strong> Phase 0 only. Never imported by <code>src/</code>.
+      Purpose: measure <strong>S = dist(L0, L9)</strong> at the real pose and decide
+      G1-vs-G2 primary. Serve over HTTPS or the camera will not start.
+    </p>
+
+    <div class="layout">
+      <div class="stage">
+        <video id="video" playsinline muted autoplay></video>
+        <canvas id="overlay"></canvas>
+      </div>
+
+      <div class="panel">
+        <div class="controls">
+          <button id="start">Start camera</button>
+          <button id="stop" disabled>Stop / teardown</button>
+          <input id="device" type="text" placeholder="device label" size="14" />
+          <select id="lighting">
+            <option value="daylight">daylight</option>
+            <option value="evening">evening</option>
+          </select>
+          <select id="mercy">
+            <option value="auto">mercy: auto</option>
+            <option value="0">force 0</option>
+            <option value="1">force 1</option>
+            <option value="2">force 2</option>
+            <option value="3">force 3</option>
+          </select>
+          <input id="clip" type="file" accept="video/*" />
+        </div>
+
+        <div id="status">idle</div>
+        <pre id="hud"></pre>
+
+        <div class="keys">
+          <kbd>P</kbd> trial passed &nbsp; <kbd>F</kbd> trial failed &nbsp;
+          <kbd>R</kbd> rejection correct &nbsp; <kbd>X</kbd> false positive<br />
+          <kbd>E</kbd> export landmark fixture &nbsp; <kbd>M</kbd> export measurement report
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

@@ -1,0 +1,3 @@
+# PRD v2 §Security & Privacy — no discoverability, no sitemap.
+User-agent: *
+Disallow: /

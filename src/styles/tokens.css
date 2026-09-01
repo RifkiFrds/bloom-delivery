@@ -1,0 +1,74 @@
+/**
+ * Design tokens — Doc 04 §A.
+ *
+ * Tailwind 4 `@theme` maps directly onto CSS custom properties, which is
+ * exactly what PRD v2's stack line asks for ("Tailwind CSS + CSS custom
+ * properties for tokens").
+ *
+ * ── THE CONTRAST RULE, ENFORCED ──────────────────────────────────────────
+ * #111111 IS THE ONLY APPROVED TEXT COLOR IN THE ENTIRE APPLICATION.
+ * Every brand color is a SURFACE or a FILL, never a foreground.
+ *
+ *   #111111 on #FFF8E8  18.3:1  pass
+ *   #111111 on #FF8FAB   8.9:1  pass
+ *   #FF8FAB on #FFF8E8   2.03:1 FAIL — never for text
+ *   #FFFFFF on #FF8FAB   2.15:1 FAIL — no white text on pink
+ *
+ * White-on-pink is prohibited despite being the instinctive kawaii choice.
+ * This is not a compromise with the art direction: neo-brutalism is BUILT ON
+ * black text and thick black borders over saturated fills. The accessible
+ * choice and the stylistically correct choice are the same choice.
+ * `tests/tokens.test.ts` fails the build on a violation.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * NO DARK THEME, in any state, including every error screen. The brightness
+ * is a product requirement (Doc 04 header).
+ */
+
+@theme {
+  /* Palette — PRD v2 §Color System */
+  --color-pink: #ff8fab;
+  --color-pink-light: #ffd6e0;
+  --color-pink-press: #ff6f92;
+  --color-cream: #fff8e8;
+  --color-yellow: #ffe599;
+  --color-green: #b7e4c7;
+  --color-white: #ffffff;
+  --color-ink: #111111;
+
+  /* Derived, states only — no new hues */
+  --color-peach: #ffc2a8; /* soft failure surface — NEVER red */
+
+  /* Radius — nothing below 12px. Sharpness comes from borders. */
+  --radius-sm: 12px;
+  --radius-md: 20px;
+  --radius-lg: 28px;
+  --radius-xl: 40px;
+
+  /* Fonts — loaded via next/font, bound in layout.tsx */
+  --font-display: var(--font-fredoka), 'Baloo 2', ui-rounded, system-ui, sans-serif;
+  --font-body: var(--font-jakarta), 'Nunito', ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+
+@theme {
+  /* Neo-brutalist shadows: ZERO blur, ZERO spread, pure black, down-right.
+     One blurred shadow anywhere breaks the entire visual language. */
+  --shadow-sm: 2px 2px 0 #111111;
+  --shadow-md: 4px 4px 0 #111111;
+  --shadow-lg: 6px 6px 0 #111111;
+  --shadow-xl: 8px 8px 0 #111111;
+  --shadow-press: 1px 1px 0 #111111;
+}
+
+:root {
+  color-scheme: light;
+
+  --border-width: 3px;
+  --border: var(--border-width) solid var(--color-ink);
+
+  /* Doc 04 §E.5 — raised above the usual 44 by PRD v2 §Mobile Strategy. */
+  --touch-min: 48px;
+
+  --dim: rgb(17 17 17 / 0.35);
+}
