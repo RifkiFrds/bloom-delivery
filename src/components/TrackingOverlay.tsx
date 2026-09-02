@@ -33,9 +33,9 @@ import { useEffect, useRef } from 'react';
 import { cameraRuntime } from '@/detection/camera/runtime';
 import { G1 } from '@/detection/config';
 import type { DetectionSnapshot } from '@/detection/ref';
-import type { Hand } from '@/detection/types';
+import { L, type Hand } from '@/detection/types';
 import { drawHands, HAND_POINTS, HAND_SLOTS } from './tracking/hands';
-import { drawHeartGuide, HEART_UNIT } from './tracking/heart';
+import { drawHandHeart, drawHornsRing } from './tracking/heart';
 import {
   drawMask,
   loadMaskArt,
@@ -189,10 +189,13 @@ export function TrackingOverlay({
       for (let slot = 0; slot < FACE_SLOTS; slot += 1) {
         const face = snapshot.faceBoxes[order[slot] ?? -1];
 
-        // Part 4: reveal follows the model's own confidence, so the mask grows
-        // in as the detector becomes sure and recedes as it loses the face. No
-        // popping, because nothing here is a boolean.
-        const target = face === undefined ? 0 : Math.min(1, Math.max(0, face.score));
+        // Reveal follows the model's own confidence AND the 🤟 latch: the mask
+        // is earned by the pose, then grows in as the detector becomes sure.
+        // Both are continuous, so nothing pops.
+        const target =
+          face === undefined || !snapshot.hornsLatched
+            ? 0
+            : Math.min(1, Math.max(0, face.score));
         maskReveal.current[slot] = integrateScalar(
           maskReveal.current[slot] ?? 0,
           maskVel.current,
@@ -271,54 +274,42 @@ export function TrackingOverlay({
       motionSafe,
     );
 
-    // ── The heart guide ──────────────────────────────────────────────────
-    // It FOLLOWS the expected gesture position, so the target meets the user
-    // halfway rather than making them find it.
-    let targetX = 0.5;
-    let targetY = 0.42;
-    let targetR = 0.16;
-
+    // ── The heart, traced through the hands ──────────────────────────────
+    // Drawn only when both hands are visible. There is no floating target and
+    // no dotted ghost: the line IS the hands, so its shape is the feedback.
     if (leftHand !== undefined && rightHand !== undefined) {
-      const a = leftHand[0];
-      const b = rightHand[0];
-      const at = leftHand[8];
-      const bt = rightHand[8];
-      if (a !== undefined && b !== undefined && at !== undefined && bt !== undefined) {
-        targetX = (a.x + b.x + at.x + bt.x) / 4;
-        targetY = (a.y + b.y + at.y + bt.y) / 4;
-        targetR = Math.max(0.1, Math.min(0.28, Math.abs(a.x - b.x) * 0.85));
-      }
+      drawHandHeart(ctx, {
+        handA: leftHand,
+        handB: rightHand,
+        toX,
+        toY,
+        progress: complete ? 1 : intensity,
+        complete,
+        pulse: motionSafe ? pulse.current : 0,
+        motionSafe,
+      });
     }
 
-    const gentle = springConstants('gentle');
-    guideX.current = integrateScalar(
-      guideX.current,
-      scalarVel.current,
-      2,
-      targetX,
-      gentle,
-      dtSec,
-    );
-    guideY.current = integrateScalar(
-      guideY.current,
-      scalarVel.current,
-      3,
-      targetY,
-      gentle,
-      dtSec,
-    );
-    guideR.current += (targetR - guideR.current) * Math.min(1, dtSec * 6);
-
-    drawHeartGuide(ctx, {
-      x: toX(guideX.current),
-      y: toY(guideY.current),
-      radius: guideR.current * unit * HEART_UNIT,
-      progress: complete ? 1 : intensity,
-      complete,
-      pulse: motionSafe ? pulse.current : 0,
-      nowMs,
-      motionSafe,
-    });
+    // ── The 🤟 tracking ring ─────────────────────────────────────────────
+    // Follows the hand until the pose lands and the masks come on, then stops.
+    // Once the mask is earned the ring has nothing left to say.
+    if (!snapshot.hornsLatched) {
+      for (const hand of hands) {
+        const wrist = hand[L.WRIST];
+        const middle = hand[L.MIDDLE_MCP];
+        if (wrist === undefined || middle === undefined) continue;
+        const radius = Math.hypot(middle.x - wrist.x, middle.y - wrist.y) * unit * 2.4;
+        drawHornsRing(
+          ctx,
+          toX((wrist.x + middle.x) / 2),
+          toY((wrist.y + middle.y) / 2),
+          radius,
+          snapshot.hornsPose,
+          nowMs,
+          motionSafe,
+        );
+      }
+    }
 
     // ── Sparkles ─────────────────────────────────────────────────────────
     if (!motionSafe) return;

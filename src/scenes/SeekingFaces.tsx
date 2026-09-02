@@ -26,7 +26,7 @@
 import { CameraStage } from '@/components/CameraStage';
 import { CoachingHUD } from '@/components/CoachingHUD';
 import { EscapeHatch } from '@/components/EscapeHatch';
-import { FramingGuide, PersonChips } from '@/components/FramingGuide';
+import { PersonChips } from '@/components/FramingGuide';
 import { TrackingOverlay } from '@/components/TrackingOverlay';
 import { selectMotionSafe, useMachineStore } from '@/store/machineStore';
 import { SEEKING_FACES } from '@/content/copy';
@@ -36,18 +36,17 @@ export function SeekingFaces(): React.ReactElement {
 
   return (
     <CameraStage
-      overlay={
-        <>
-          <FramingGuide />
-          {/*
-            The masks are the point of THIS stage: they are the proof that the
-            camera has found both people, which is what `SEEKING_FACES` is
-            asking them to prove. Hands usually draw nothing here — the hand
-            model is still downloading — but light up if it lands early.
-          */}
-          <TrackingOverlay motionSafe={motionSafe} />
-        </>
-      }
+      // ── NO FRAMING RETICLES ────────────────────────────────────────────
+      // Doc 04 §B.6 specifies two reticles as framing guidance. They were
+      // removed: with masks tracking the faces and a ring tracking the hands,
+      // two static rounded rectangles are the only thing on screen that does
+      // NOT respond to the user, and they read as leftover debug chrome.
+      //
+      // The job they did — "stand where the camera can see you" — is now done
+      // better by the masks themselves, which only appear when a face is
+      // actually found. The person chips below still report the count.
+      // ───────────────────────────────────────────────────────────────────
+      overlay={<TrackingOverlay motionSafe={motionSafe} />}
       hud={
         <div className="flex flex-col gap-3">
           <PersonChips />

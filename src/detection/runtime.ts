@@ -30,6 +30,7 @@ import { ClosenessFilter } from './gesture/closeness';
 import { HoldTimer } from './gesture/hold';
 import { palmScale } from './gesture/metrics';
 import { RingBuffer } from './gesture/nofm';
+import { anyHorns } from './gesture/horns';
 import { selectGesture } from './gesture/select';
 import {
   aspectFactor,
@@ -384,6 +385,13 @@ export class DetectionRuntime {
     detectionRef.hands = hands;
     detectionRef.handCount = hands.length;
     detectionRef.palmScales = scales;
+    // Display only. Deliberately NOT an FSM event: the unlock is the heart, and
+    // adding a second way in would be a second thing that can go wrong on the
+    // one screen that must not.
+    const horns = anyHorns(hands);
+    detectionRef.hornsPose = horns;
+    if (horns) detectionRef.hornsLatched = true;
+
     detectionRef.lumaY = this.luma.value;
     detectionRef.tooDark = this.luma.tooDark;
 

@@ -260,6 +260,20 @@ export const EYE: readonly (readonly [number, number])[] = [
 const ART_EYE_LINE = 0.42;
 const ART_INTEROCULAR = 0.26;
 
+/**
+ * ★ THE ARTWORK SIZE KNOB ★ — separate from `MASK_SCALE`, which sizes the
+ * procedural mask.
+ *
+ * The two cannot share one constant. The procedural mask is authored to known
+ * proportions, so its scale is a correction. Artwork is authored by whoever
+ * drew it: a file whose face fills the canvas and one with generous margins
+ * need different numbers even at the same nominal eye spacing, and the contract
+ * in `public/mask/README.md` cannot enforce framing.
+ *
+ * Turn this down if the artwork overhangs the face.
+ */
+export const MASK_ART_SCALE = 0.72;
+
 const art: Partial<Record<MaskVariant, HTMLImageElement>> = {};
 
 export function loadMaskArt(variant: MaskVariant, src: string): void {
@@ -320,7 +334,7 @@ function drawArt(
   unit: number,
   alpha: number,
 ): void {
-  const width = unit / ART_INTEROCULAR;
+  const width = (unit / ART_INTEROCULAR) * MASK_ART_SCALE;
   const height = width * (image.naturalHeight / image.naturalWidth);
   ctx.globalAlpha = alpha;
   ctx.drawImage(image, -width / 2, -height * ART_EYE_LINE, width, height);

@@ -10,6 +10,9 @@
 
 import { describe, expect, it } from 'vitest';
 
+import { anyHorns, isHornsPose } from '@/detection/gesture/horns';
+import { makeHand } from './fixtures/hands';
+
 import {
   integrate,
   integrateScalar,
@@ -346,5 +349,82 @@ describe('mask proportions match a real face', () => {
     );
     expect(width).toBeGreaterThan(0.4);
     expect(width).toBeLessThan(0.75);
+  });
+});
+
+describe('the 🤟 pose — display trigger only', () => {
+  /**
+   * ── IT CANNOT UNLOCK ANYTHING ──────────────────────────────────────────
+   * This pose decides whether the hero mask appears. The gift is still opened
+   * by the two-hand heart and nothing else. These tests pin the SHAPE; the fact
+   * that it drives no transition is enforced by there being no FSM event to
+   * find — `tests/machine.test.ts` would fail on an illegal pair if one
+   * appeared.
+   * ─────────────────────────────────────────────────────────────────────────
+   */
+  const S = 0.06;
+
+  /** Thumb, index and pinky out; middle and ring folded. */
+  const horns = makeHand({
+    wrist: { x: 0.5, y: 0.62 },
+    palmAngleDeg: -90,
+    scale: S,
+    curlFactor: 1.15, // middle + ring tucked inside their PIPs
+    pinkyFactor: 1.9, // …but the pinky reaches past its own PIP at 1.3
+    thumbTip: { x: 0.44, y: 0.55 },
+    indexTip: { x: 0.487, y: 0.44 },
+    indexPipFactor: 1.5,
+  });
+
+  it('accepts the sign', () => {
+    expect(isHornsPose(horns)).toBe(true);
+  });
+
+  it('rejects an open palm — nothing is folded', () => {
+    const open = makeHand({
+      wrist: { x: 0.5, y: 0.62 },
+      palmAngleDeg: -90,
+      scale: S,
+      curlFactor: 2.6,
+      thumbTip: { x: 0.44, y: 0.55 },
+      indexTip: { x: 0.487, y: 0.44 },
+    });
+    expect(isHornsPose(open)).toBe(false);
+  });
+
+  it('rejects a fist — the index and pinky are folded too', () => {
+    const fist = makeHand({
+      wrist: { x: 0.5, y: 0.62 },
+      palmAngleDeg: -90,
+      scale: S,
+      curlFactor: 1.15,
+      thumbTip: { x: 0.5, y: 0.585 },
+      indexTip: { x: 0.5, y: 0.585 },
+      indexPipFactor: 1.5,
+    });
+    expect(isHornsPose(fist)).toBe(false);
+  });
+
+  it('rejects a hand too far from the camera', () => {
+    const tiny = makeHand({
+      wrist: { x: 0.5, y: 0.55 },
+      palmAngleDeg: -90,
+      scale: 0.02,
+      curlFactor: 1.15,
+      thumbTip: { x: 0.48, y: 0.53 },
+      indexTip: { x: 0.494, y: 0.5 },
+      indexPipFactor: 1.5,
+    });
+    expect(isHornsPose(tiny)).toBe(false);
+  });
+
+  it('anyHorns finds it among several hands, and copes with none', () => {
+    expect(anyHorns([])).toBe(false);
+    expect(anyHorns([horns])).toBe(true);
+  });
+
+  it('does not throw on a malformed hand', () => {
+    expect(() => isHornsPose([])).not.toThrow();
+    expect(isHornsPose([])).toBe(false);
   });
 });

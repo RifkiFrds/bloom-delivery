@@ -46,6 +46,14 @@ interface HandSpec {
   readonly indexTip: Point;
   /** Fraction of `scale` at which the index PIP sits from the wrist. */
   readonly indexPipFactor?: number;
+  /**
+   * Overrides the pinky tip radius independently of `curlFactor`.
+   *
+   * The 🤟 sign needs the pinky EXTENDED while the middle and ring are folded,
+   * and `curlFactor` moves all three together — so without this the pose cannot
+   * be expressed at all.
+   */
+  readonly pinkyFactor?: number;
 }
 
 function polar(origin: Point, angleDeg: number, distance: number): Point {
@@ -88,7 +96,7 @@ export function makeHand(spec: HandSpec): Hand {
   // curled; beyond it means extended. That single number drives C7 / C4.
   points[12] = polar(wrist, angle, scale * curlFactor); // MIDDLE_TIP
   points[16] = polar(wrist, angle + 16, scale * curlFactor * 0.95); // RING_TIP
-  points[20] = polar(wrist, angle + 32, scale * curlFactor * 0.87); // PINKY_TIP
+  points[20] = polar(wrist, angle + 32, scale * (spec.pinkyFactor ?? curlFactor * 0.87)); // PINKY_TIP
 
   points[4] = spec.thumbTip;
   points[8] = spec.indexTip;

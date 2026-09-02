@@ -68,6 +68,19 @@ export interface DetectionSnapshot {
   gestureElapsedMs: number;
 
   // ── Environment ─────────────────────────────────────────────────────────
+  /**
+   * The 🤟 pose is visible right now. DISPLAY ONLY — it gates the hero mask and
+   * nothing else; no gate, no guard and no FSM event reads it.
+   */
+  hornsPose: boolean;
+  /**
+   * The pose has been made at least once this session, so the masks stay on.
+   *
+   * Latched rather than held: making someone hold a pose to keep their mask is
+   * a chore, and the mask is a reward, not a control.
+   */
+  hornsLatched: boolean;
+
   lumaY: number;
   tooDark: boolean;
   coaching: CoachingState;
@@ -112,6 +125,9 @@ function blank(): DetectionSnapshot {
     holdProgress: 0,
     mercyLevel: 0,
     gestureElapsedMs: 0,
+
+    hornsPose: false,
+    hornsLatched: false,
 
     lumaY: 255,
     tooDark: false,
