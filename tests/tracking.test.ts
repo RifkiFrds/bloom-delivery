@@ -19,6 +19,7 @@ import {
 import {
   BANDS,
   EYE,
+  MASK_SCALE,
   maskFrame,
   orderByScreenPosition,
   SHELL,
@@ -299,5 +300,51 @@ describe('the mask is an original design, not the reference', () => {
     const ys = SHELL.map(([, y]) => y);
     expect(Math.min(...ys)).toBeLessThan(-1.5); // above the brow
     expect(Math.max(...ys)).toBeGreaterThan(2); // past the chin
+  });
+});
+
+describe('mask proportions match a real face', () => {
+  /**
+   * Everything is measured in pupil-to-pupil distances, so these ratios are
+   * anthropometry, not taste — and they are what the reported "topengnya
+   * kebesaran" turned out to be. The authored polygon was uniformly ~1.3× too
+   * large, which `MASK_SCALE` corrects.
+   *
+   * A face is roughly 13.5 cm across the cheekbones with pupils 6.4 cm apart,
+   * so half the face width is about 1.05 of a unit.
+   */
+  const effective = (value: number): number => value * MASK_SCALE;
+
+  it('is no wider than a face', () => {
+    const halfWidth = effective(Math.max(...SHELL.map(([x]) => Math.abs(x))));
+    expect(halfWidth).toBeGreaterThan(0.95);
+    expect(halfWidth).toBeLessThan(1.15);
+  });
+
+  it('reaches the crown and the chin, and no further', () => {
+    const top = effective(Math.min(...SHELL.map(([, y]) => y)));
+    const bottom = effective(Math.max(...SHELL.map(([, y]) => y)));
+
+    expect(top).toBeGreaterThan(-1.45); // not floating above the head
+    expect(top).toBeLessThan(-1.15);
+    expect(bottom).toBeGreaterThan(1.6); // covers the chin
+    expect(bottom).toBeLessThan(1.95); // does not hang off it
+  });
+
+  /**
+   * ★ The bug inside the bug ★ — the eye HOLES sat 0.62 apart while the eyes
+   * they frame are 0.5 apart by definition. They were framing empty cheek.
+   */
+  it('the eye openings sit on the eyes', () => {
+    const EYE_OFFSET = 0.62; // the authored translate in `drawProcedural`
+    expect(effective(EYE_OFFSET)).toBeCloseTo(0.5, 1);
+  });
+
+  it('the eye opening is wide enough to see through, not wider than an eye socket', () => {
+    const width = effective(
+      Math.max(...EYE.map(([x]) => x)) - Math.min(...EYE.map(([x]) => x)),
+    );
+    expect(width).toBeGreaterThan(0.4);
+    expect(width).toBeLessThan(0.75);
   });
 });

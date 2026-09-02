@@ -21,13 +21,13 @@ The overlay places artwork by the **eye line**, not by the bounding box, so it
 tracks a tilted head correctly. That only works if the files are authored to
 these proportions:
 
-| Property | Value |
-|---|---|
-| Canvas | **square** |
-| Face | centred horizontally |
-| Eye line | at **42%** of the height |
-| Interocular distance | **26%** of the width |
-| Eyes and background | **transparent** |
+| Property             | Value                    |
+| -------------------- | ------------------------ |
+| Canvas               | **square**               |
+| Face                 | centred horizontally     |
+| Eye line             | at **42%** of the height |
+| Interocular distance | **26%** of the width     |
+| Eyes and background  | **transparent**          |
 
 Getting the interocular distance wrong scales the whole mask; getting the eye
 line wrong slides it up or down the face. Both are visible immediately.

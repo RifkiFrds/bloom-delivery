@@ -113,6 +113,34 @@ export function maskFrame(
   };
 }
 
+/**
+ * ★ THE SIZE KNOB ★ — turn this down for a smaller mask, up for a larger one.
+ *
+ * ── WHY IT IS 0.78 AND NOT 1.0 ───────────────────────────────────────────
+ * The geometry below was authored by eye and came out uniformly ~1.3× too
+ * large. Measured against real proportions, with the pupil-to-pupil distance as
+ * the unit:
+ *
+ *                       authored    a real face    ratio
+ *   half face width       1.36         ~1.05       1.30×
+ *   eye line to crown     1.72         ~1.30       1.32×
+ *   eye line to chin      2.24         ~1.75       1.28×
+ *   eye opening offset    0.62          0.50       1.24×
+ *
+ * The last row was a bug on its own: the eye HOLES sat wider apart than the
+ * eyes they were supposed to frame.
+ *
+ * Because the error was uniform, one scale corrects all four — which is also
+ * why this is a single constant rather than a rewritten polygon. The authored
+ * numbers stay readable, and the relationship to a real face stays visible.
+ *
+ * It scales the LINE WIDTHS too, since those are in the same local units, so
+ * the outline stays proportional at any value. Drop-in artwork is unaffected:
+ * that path sizes itself from the contract in `public/mask/README.md`.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+export const MASK_SCALE = 0.78;
+
 // ── The design, authored once in local units ────────────────────────────────
 //
 // Eyes sit at (±0.5, 0); one unit is the interocular distance. Everything below
@@ -280,7 +308,8 @@ export function drawMask(
     return;
   }
 
-  ctx.scale(frame.unit * grow, frame.unit * grow);
+  const scale = frame.unit * grow * MASK_SCALE;
+  ctx.scale(scale, scale);
   drawProcedural(ctx, PALETTE[variant], alpha, glow, pulse);
   ctx.restore();
 }
