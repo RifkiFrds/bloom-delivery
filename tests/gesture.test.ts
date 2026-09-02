@@ -17,7 +17,8 @@
 
 import { describe, expect, it } from 'vitest';
 
-import { G1, MERCY, NOFM, HOLD } from '@/detection/config';
+import { CLOSENESS, G1, MERCY, NOFM, HOLD } from '@/detection/config';
+import { statusFor } from '@/components/DetectionStatusCard';
 import { deriveCoaching, type CoachingInput } from '@/detection/coaching';
 import { evaluateG1 } from '@/detection/gesture/g1';
 import { evaluateG2 } from '@/detection/gesture/g2';
@@ -441,5 +442,28 @@ describe('coaching priority — Doc 04 §B.9, first match wins', () => {
 
   it('IDLE is the default', () => {
     expect(deriveCoaching(base)).toBe('IDLE');
+  });
+});
+
+describe('the realtime status pill — Doc 04 §B.9 companion', () => {
+  /**
+   * Purely a DISPLAY derivation. `closeness` is a UI-only scalar by design
+   * (Doc 03 §6.5) and must never gate a transition — reading it here is exactly
+   * what it exists for.
+   */
+  it('reports what the user needs to know, in order of urgency', () => {
+    expect(statusFor(0, 0, 0)).toBe('searching');
+    expect(statusFor(1, 0, 0)).toBe('oneHand');
+    expect(statusFor(2, 0, 0)).toBe('twoHands');
+    expect(statusFor(2, CLOSENESS.almostThreshold, 0)).toBe('almost');
+    expect(statusFor(2, 1, 1)).toBe('complete');
+  });
+
+  it('completion outranks everything, even a lost hand mid-hold', () => {
+    expect(statusFor(0, 0, 1)).toBe('complete');
+  });
+
+  it('"almost" needs the same threshold the coaching state uses', () => {
+    expect(statusFor(2, CLOSENESS.almostThreshold - 0.01, 0)).toBe('twoHands');
   });
 });

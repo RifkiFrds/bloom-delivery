@@ -27,12 +27,27 @@ import { CameraStage } from '@/components/CameraStage';
 import { CoachingHUD } from '@/components/CoachingHUD';
 import { EscapeHatch } from '@/components/EscapeHatch';
 import { FramingGuide, PersonChips } from '@/components/FramingGuide';
+import { HandOverlay } from '@/components/HandOverlay';
+import { selectMotionSafe, useMachineStore } from '@/store/machineStore';
 import { SEEKING_FACES } from '@/content/copy';
 
 export function SeekingFaces(): React.ReactElement {
+  const motionSafe = useMachineStore(selectMotionSafe);
+
   return (
     <CameraStage
-      overlay={<FramingGuide />}
+      overlay={
+        <>
+          <FramingGuide />
+          {/*
+            The hand model is usually not loaded yet, so this draws nothing —
+            but when it IS ready early, hands light up before the gesture stage
+            begins, which is the clearest possible signal that the camera is
+            seeing the user.
+          */}
+          <HandOverlay motionSafe={motionSafe} />
+        </>
+      }
       hud={
         <div className="flex flex-col gap-3">
           <PersonChips />

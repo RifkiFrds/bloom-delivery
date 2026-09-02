@@ -209,6 +209,34 @@ body {
   }
 }
 
+/**
+ * The realtime status pill — Doc 04 §A.6.
+ *
+ * Opaque at every state, because it sits over live video and text over video
+ * can never guarantee contrast (§F.1). `#111111` on all four fills, which is
+ * the only text colour in the application.
+ */
+.status-pill {
+  background-color: var(--color-white);
+  transition:
+    background-color 240ms ease-out,
+    transform 240ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.status-pill[data-state='twoHands'] {
+  background-color: var(--color-cream);
+}
+
+.status-pill[data-state='almost'] {
+  background-color: var(--color-yellow);
+  transform: translate(-50%, -2px) scale(1.04);
+}
+
+.status-pill[data-state='complete'] {
+  background-color: var(--color-pink);
+  transform: translate(-50%, -2px) scale(1.06);
+}
+
 /* Screen-reader-only, for the two live regions (Doc 04 §F.4). */
 .sr-only {
   position: absolute;

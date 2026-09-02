@@ -67,9 +67,12 @@ export function FramingGuide(): React.ReactElement {
           y={(RETICLE_Y - RETICLE_H / 2) * 133}
           width={RETICLE_W * 100}
           height={RETICLE_H * 133}
-          rx="10"
+          rx="12"
           fill="none"
-          strokeWidth="1.2"
+          // 3 px, matching every other border in the system. The previous 1.2 px
+          // hairline read as a wireframe rather than as a chunky target
+          // (Doc 04 §A.7: uniform 3 px outline, no weight variation).
+          strokeWidth="3"
           vectorEffect="non-scaling-stroke"
         />
       ))}

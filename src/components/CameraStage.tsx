@@ -33,6 +33,12 @@ export interface CameraStageProps {
   readonly overlay?: React.ReactNode;
   /** The progress ring, drawn on the frame border. Not mirrored. */
   readonly ring?: React.ReactNode;
+  /**
+   * Chrome pinned inside the frame but OUTSIDE the mirror — status pills and
+   * anything carrying text. Mirrored text is unreadable, so it cannot live in
+   * `overlay`.
+   */
+  readonly chrome?: React.ReactNode;
   /** Coaching HUD, below the preview. Always an opaque card, never over video. */
   readonly hud?: React.ReactNode;
   /** Escape hatch and other bottom-anchored chrome. */
@@ -46,6 +52,7 @@ export interface CameraStageProps {
 export function CameraStage({
   overlay,
   ring,
+  chrome,
   hud,
   footer,
   children,
@@ -63,9 +70,16 @@ export function CameraStage({
   }, []);
 
   return (
-    <div className="flex min-h-[100dvh] w-full flex-col items-center px-5 pt-[max(1rem,env(safe-area-inset-top))] pb-[max(1rem,env(safe-area-inset-bottom))]">
-      <div className="flex w-full max-w-[560px] flex-1 flex-col gap-4">
-        <div className="relative mt-16 aspect-[3/4] w-full overflow-hidden rounded-[28px] border-3 border-ink bg-cream shadow-[6px_6px_0_#111111]">
+    // ── THE CAMERA IS THE HERO ───────────────────────────────────────────
+    // The preview claims every pixel between the mute toggle and the coaching
+    // card: `flex-1` with `min-h-0` rather than a fixed `aspect-[3/4]`, which
+    // previously left most of a tall phone empty below the frame.
+    //
+    // Gutters drop from 20 px to 12 px and the column cap rises 560 → 660 px,
+    // about 18% more visual width, which is where the hands actually are.
+    <div className="flex min-h-[100dvh] w-full flex-col items-center px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
+      <div className="flex w-full max-w-[660px] flex-1 flex-col gap-3">
+        <div className="relative mt-14 min-h-[46dvh] w-full flex-1 overflow-hidden rounded-[40px] border-3 border-ink bg-cream shadow-[8px_8px_0_#111111]">
           <video
             ref={videoRef}
             aria-hidden="true"
@@ -90,6 +104,7 @@ export function CameraStage({
           )}
 
           {ring}
+          {chrome}
 
           {children !== undefined && (
             <div className="absolute inset-0 flex items-center justify-center p-5">
@@ -103,7 +118,7 @@ export function CameraStage({
 
         {hud}
 
-        <div className="mt-auto flex flex-col gap-3 pt-4">{footer}</div>
+        <div className="mt-auto flex flex-col gap-2 pt-2">{footer}</div>
       </div>
     </div>
   );

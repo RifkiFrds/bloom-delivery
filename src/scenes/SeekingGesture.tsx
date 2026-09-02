@@ -26,9 +26,11 @@ import { useEffect } from 'react';
 
 import { CameraStage } from '@/components/CameraStage';
 import { CoachingHUD } from '@/components/CoachingHUD';
+import { DetectionStatusCard } from '@/components/DetectionStatusCard';
 import { EscapeHatch } from '@/components/EscapeHatch';
 import { FrameProgressRing } from '@/components/FrameProgressRing';
 import { GestureDiagram } from '@/components/GestureDiagram';
+import { HandOverlay } from '@/components/HandOverlay';
 import { MERCY_COPY } from '@/content/copy';
 import { detectionRuntime } from '@/detection/runtime';
 import { selectContext, selectMotionSafe, useMachineStore } from '@/store/machineStore';
@@ -64,12 +66,17 @@ export function SeekingGesture(): React.ReactElement {
     <CameraStage
       ring={<FrameProgressRing motionSafe={motionSafe} />}
       overlay={
-        // Mirrored with the video, so the diagram's left hand is on the user's
-        // left as they see themselves.
-        <div className="flex h-full w-full items-end justify-center pb-6">
-          <GestureDiagram motionSafe={motionSafe} />
-        </div>
+        // Mirrored with the video: the landmarks must sit on the hands, and the
+        // diagram's left hand must be on the user's left as they see themselves.
+        <>
+          <HandOverlay motionSafe={motionSafe} />
+          <div className="flex h-full w-full items-end justify-center pb-4 opacity-80">
+            <GestureDiagram motionSafe={motionSafe} />
+          </div>
+        </>
       }
+      // Outside the mirror — the pill carries text.
+      chrome={<DetectionStatusCard />}
       hud={<CoachingHUD mercyLevel={mercyLevel} />}
       footer={<EscapeHatch mercyLevel={mercyLevel} />}
     >

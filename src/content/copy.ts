@@ -103,6 +103,26 @@ export const HATCH_LABEL = [
   'Open it anyway',
 ] as const;
 
+/**
+ * ── THE REALTIME STATUS PILL ── Indonesian, as specified in the UI request.
+ *
+ * ⚠️ THE APPLICATION IS NOW MIXED-LANGUAGE. Every other string in this file is
+ * English, so a user sees an Indonesian pill above an English coaching card.
+ * That is a real defect, not a style question — but translating the rest is a
+ * copy decision, not an implementation one, and the copy elsewhere was written
+ * with care. Left deliberately visible rather than half-solved.
+ *
+ * The two-hand line doubles as the instructional overlay: it is the moment the
+ * user has both hands up and needs to be told what to do with them.
+ */
+export const STATUS = {
+  searching: 'Mencari tangan…',
+  oneHand: 'Satu tangan terdeteksi',
+  twoHands: 'Satukan kedua tanganmu ❤️',
+  almost: 'Hampir! ❤️',
+  complete: 'Sempurna! ❤️',
+} as const;
+
 export const GESTURE = {
   diagramAlt: 'Two hands, one from each person, meeting to form a heart.',
   ringLabel: 'Holding the heart',
