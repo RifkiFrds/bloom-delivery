@@ -112,6 +112,31 @@ Ada juga panel FSM di kanan bawah: state sekarang, 10 event terakhir, dan
 tombol lompat ke state mana pun. Sangat berguna untuk mengecek layar error
 tanpa harus benar-benar membuat errornya.
 
+### Menguji sendirian — `?solo=1`
+
+```
+https://<ip>:3000/d/coba?solo=1&debug=1
+```
+
+Gerbang kebersamaan turun dari **dua wajah ke satu**, jadi kamu bisa menjalani
+seluruh alur tanpa orang kedua. **Tidak ada lagi yang berubah**: jendela N-of-M
+8-of-10 yang sama, filter wajah yang sama, efek `detection.enableHands` yang
+asli, hold timer yang asli, tangga mercy yang asli.
+
+Untuk hatinya, **dua tanganmu sendiri sah**. Handedness diabaikan sepenuhnya
+(Doc 03 §2.5) — tidak ada satu pun kondisi yang memeriksa tangan itu milik
+siapa. Sandarkan HP atau pakai laptop supaya kedua tangan bebas.
+
+> **Kenapa jangan pakai tombol lompat panel debug untuk ini.** Melompat itu
+> melewati reducer, jadi efeknya tidak ikut jalan — dulu tahap gestur tiba
+> dengan model tangan mati, dan itu terlihat persis seperti hand tracking rusak.
+> Sudah diperbaiki, tapi `?solo=1` tetap cara yang jujur: pipeline aslinya
+> benar-benar berjalan.
+
+Flag ini **mati total di build produksi** (`NODE_ENV`), sama seperti `?debug=1`.
+Tidak ada versi yang tersimpan dan tidak ada toggle di dalam aplikasi — flag
+yang bertahan setelah reload adalah flag yang orang lupa masih menyala.
+
 > Tanpa HUD ini gesturnya tidak bisa dikalibrasi. Kalau gerakan tidak terdeteksi,
 > HUD akan bilang persis kondisi mana yang gagal, misalnya `C5 0.031 >= 0.048`.
 

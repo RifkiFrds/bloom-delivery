@@ -49,6 +49,16 @@ export interface FaceGateState {
 }
 
 export class FaceGate {
+  /**
+   * How many valid faces close the latch. `FACE.latchMinCount` (2) in every
+   * build; lowered to 1 ONLY by the development solo flag, so one person can
+   * walk the whole flow without a second body in the room.
+   *
+   * A field rather than a constant read, so the production path is byte for
+   * byte what it was and the override has exactly one caller.
+   */
+  private minCount: number = FACE.latchMinCount;
+
   private readonly latchBuffer = new RingBuffer(FACE.latchWindow, FACE.latchRequired);
   private readonly livenessBuffer = new RingBuffer(
     FACE.livenessWindow,
@@ -85,7 +95,7 @@ export class FaceGate {
 
     const validCount = countValidFaces(boxes, relaxed);
 
-    const latchSatisfied = this.latchBuffer.push(validCount >= FACE.latchMinCount);
+    const latchSatisfied = this.latchBuffer.push(validCount >= this.minCount);
     this.livenessBuffer.push(validCount >= FACE.livenessMinCount);
 
     let justLatched = false;
@@ -115,6 +125,15 @@ export class FaceGate {
       soloElapsedMs: this.soloElapsedMs,
       soloTimeout,
     };
+  }
+
+  /**
+   * DEVELOPMENT ONLY — see `lib/devFlags.ts`. Never called in a production
+   * build, and the gate is otherwise identical: same N-of-M window, same
+   * validity filter, same liveness rule.
+   */
+  setLatchMinCount(count: number): void {
+    this.minCount = Math.max(1, count);
   }
 
   /** For the measurement report: ms from first tick to latch. */

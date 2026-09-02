@@ -22,6 +22,8 @@ import { DebugPanel } from '@/components/DebugPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { bus } from '@/events/bus';
 import { buildBootPayload, probeCapabilities } from '@/lib/capability';
+import { activeFlags, isSoloMode } from '@/lib/devFlags';
+import { detectionRuntime } from '@/detection/runtime';
 import { record } from '@/lib/diagnostics';
 import { ScenePlaceholder } from '@/scenes/ScenePlaceholder';
 import { SCENES } from '@/scenes/registry';
@@ -56,6 +58,14 @@ export default function ExperienceRoot(): React.ReactElement {
     }
 
     bus.emit({ type: 'BOOT_OK', payload: buildBootPayload(report) });
+  }, []);
+
+  // ── Development flags ─────────────────────────────────────────────────────
+  // Applied before detection starts, and inert in a production build.
+  useEffect(() => {
+    if (isSoloMode()) detectionRuntime.enableSoloMode();
+    const flags = activeFlags();
+    if (flags.length > 0) record(`dev flags: ${flags.join(', ')}`);
   }, []);
 
   // ── Visibility: pause the loop, audio and the mercy timers ────────────────

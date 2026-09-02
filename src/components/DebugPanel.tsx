@@ -17,6 +17,7 @@
 import { useEffect, useState } from 'react';
 
 import { bus } from '@/events/bus';
+import { detectionRuntime } from '@/detection/runtime';
 import { STATES, type State } from '@/machine';
 import { log } from '@/lib/diagnostics';
 import { isEphemeral } from '@/lib/persistence';
@@ -139,7 +140,23 @@ function Section({
  * Jumping bypasses the transition table on purpose — it is a development
  * affordance for reaching a state without walking the whole flow, and it is
  * the only place in the app permitted to set state outside the reducer.
+ *
+ * ── AND THAT BYPASS HAS A COST WORTH KNOWING ────────────────────────────
+ * Skipping the reducer skips its EFFECTS. Jumping straight to
+ * `SEEKING_GESTURE` therefore never ran `detection.enableHands`, so the gesture
+ * stage arrived with the hand model switched off — which looks exactly like
+ * broken hand tracking rather than like a missing side effect.
+ *
+ * So the jump now syncs the detection mode it lands in. It is still not a real
+ * transition, and `?solo=1` remains the honest way to walk the flow alone.
+ * ─────────────────────────────────────────────────────────────────────────
  */
+function syncDetectionFor(target: State): void {
+  if (target === 'SEEKING_GESTURE' || target === 'GESTURE_HOLDING') {
+    detectionRuntime.enableHands();
+  }
+}
+
 function JumpButton({
   target,
   active,
@@ -149,6 +166,7 @@ function JumpButton({
       type="button"
       onClick={() => {
         useMachineStore.setState({ state: target });
+        syncDetectionFor(target);
       }}
       className={[
         'rounded-[8px] border-2 border-ink px-1.5 py-0.5',

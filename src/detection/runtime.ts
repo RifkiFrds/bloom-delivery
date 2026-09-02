@@ -137,6 +137,22 @@ export class DetectionRuntime {
     );
   }
 
+  /**
+   * DEVELOPMENT ONLY — `?solo=1`. Closes the togetherness latch on one face so
+   * the whole flow can be walked alone. See `lib/devFlags.ts`.
+   */
+  enableSoloMode(): void {
+    // Guarded HERE as well as at the call site. Terser eliminates `isSoloMode()`
+    // in a production build, so nothing can reach this — but a class method
+    // cannot be proven unreachable and survives in the bundle. This line makes
+    // the body itself fold away, so the guarantee does not depend on some
+    // future call site remembering to check first.
+    if (process.env.NODE_ENV === 'production') return;
+
+    this.faceGate.setLatchMinCount(1);
+    record('detection: SOLO MODE — latch lowered to 1 face (dev only)');
+  }
+
   start(): void {
     if (this.faceDetector === null) return;
     resetDetectionRef();

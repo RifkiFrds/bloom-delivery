@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { noteRender, rendersPerSecond, type DetectionSnapshot } from '@/detection/ref';
 import { bus } from '@/events/bus';
+import { activeFlags, isDebugMode } from '@/lib/devFlags';
 import type { Condition, VariantResult } from '@/detection/types';
 import { useDetectionFrame } from './useDetectionFrame';
 
@@ -31,7 +32,7 @@ export function DebugHUD(): React.ReactElement | null {
   const [enabled, setEnabled] = useState(false);
 
   useEffect(() => {
-    setEnabled(new URLSearchParams(window.location.search).get('debug') === '1');
+    setEnabled(isDebugMode());
   }, []);
 
   useDetectionFrame((snapshot, nowMs) => {
@@ -108,6 +109,9 @@ function render(snapshot: DetectionSnapshot, nowMs: number): string {
 
   return [
     `mode  ${snapshot.mode}  mercy ${String(snapshot.mercyLevel)}  tick ${String(snapshot.tick)}`,
+    `flags ${activeFlags().join(' ') || 'none'}   horns ${
+      snapshot.hornsLatched ? 'LATCHED' : snapshot.hornsPose ? 'now' : '—'
+    }`,
     `perf  ${num(snapshot.inferenceMs, 1)}ms  p50 ${num(snapshot.inferenceP50, 1)}  p95 ${num(
       snapshot.inferenceP95,
       1,
