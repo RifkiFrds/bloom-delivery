@@ -77,11 +77,18 @@ export function CameraStage({
     // card: `flex-1` with `min-h-0` rather than a fixed `aspect-[3/4]`, which
     // previously left most of a tall phone empty below the frame.
     //
-    // Gutters drop from 20 px to 12 px and the column cap rises 560 → 660 px,
-    // about 18% more visual width, which is where the hands actually are.
+    // Gutters drop from 20 px to 12 px, and the column grows with the viewport
+    // instead of stopping at a fixed cap.
+    //
+    // Doc 04 §E.1 caps the desktop camera stage at 720 px in "a decorative
+    // bordered frame". That reads as a deliberate frame on a wide monitor and
+    // as wasted space on a laptop, where the hands are then small enough that
+    // the palm-scale gate starts to matter. `min(96vw, 1120px)` keeps the phone
+    // layout byte for byte identical — 96vw is smaller than the cap at every
+    // phone width — and lets the desktop stage fill the room it has.
     <div className="flex min-h-[100dvh] w-full flex-col items-center px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      <div className="flex w-full max-w-[660px] flex-1 flex-col gap-3">
-        <div className="relative mt-14 min-h-[46dvh] w-full flex-1 overflow-hidden rounded-[40px] border-3 border-ink bg-cream shadow-[8px_8px_0_#111111]">
+      <div className="flex w-full max-w-[min(96vw,1120px)] flex-1 flex-col gap-3">
+        <div className="relative mt-14 min-h-[52dvh] w-full flex-1 overflow-hidden rounded-[40px] border-3 border-ink bg-cream shadow-[8px_8px_0_#111111]">
           {/* The runtime's persistent <video> is appended here. */}
           <div ref={hostRef} className="absolute inset-0" />
 

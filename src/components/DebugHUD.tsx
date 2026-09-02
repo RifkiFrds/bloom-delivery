@@ -23,6 +23,7 @@ import { useEffect, useRef, useState } from 'react';
 
 import { noteRender, rendersPerSecond, type DetectionSnapshot } from '@/detection/ref';
 import { bus } from '@/events/bus';
+import { lastBlockedTransition, useMachineStore } from '@/store/machineStore';
 import { activeFlags, isDebugMode } from '@/lib/devFlags';
 import type { Condition, VariantResult } from '@/detection/types';
 import { useDetectionFrame } from './useDetectionFrame';
@@ -137,5 +138,13 @@ function render(snapshot: DetectionSnapshot, nowMs: number): string {
     `closeness ${num(snapshot.closeness, 2)}  coaching ${snapshot.coaching}`,
     `hold ${num(snapshot.holdMs, 0)}ms / 900   accepted ${snapshot.accepted ? '✓' : '✗'}`,
     `N-of-M ${dots}  (${String(hits)} of ${String(snapshot.nofmWindow.length)})`,
+    '─'.repeat(46),
+    // The two lines that answer "the ring filled but nothing happened".
+    `hasUnlocked ${
+      useMachineStore.getState().context.hasUnlocked
+        ? 'TRUE — canUnlock will refuse'
+        : 'false'
+    }`,
+    `blocked ${lastBlockedTransition() ?? '—'}`,
   ].join('\n');
 }

@@ -157,6 +157,44 @@ function syncDetectionFor(target: State): void {
   }
 }
 
+/** States from which the experience has not yet been unlocked. */
+const PRE_UNLOCK: ReadonlySet<State> = new Set<State>([
+  'BOOT',
+  'LANDING',
+  'PREFLIGHT',
+  'REQUESTING_CAMERA',
+  'LOADING_DETECTION',
+  'SEEKING_FACES',
+  'SOLO_PROMPT',
+  'TOGETHER_CONFIRMED',
+  'SEEKING_GESTURE',
+  'GESTURE_HOLDING',
+]);
+
+/**
+ * Jumping BACKWARD releases the session latches.
+ *
+ * ── THE TRAP THIS CLOSES ─────────────────────────────────────────────────
+ * `hasUnlocked` is write-once for the whole session, which is exactly right in
+ * production — it is what makes the sequence run once, and it is what kills
+ * every double-fire race.
+ *
+ * But pressing "force unlock" and then jumping back to `SEEKING_GESTURE` leaves
+ * it latched, so every later `HOLD_COMPLETE` is guarded away in silence. The
+ * gesture keeps working, the ring keeps filling and the status pill still
+ * reaches "Sempurna" — all three read `holdProgress`, which knows nothing about
+ * the machine — and the flowers never come.
+ *
+ * It looks exactly like broken detection. It is a latch doing its job.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+function releaseLatchesFor(target: State): void {
+  if (!PRE_UNLOCK.has(target)) return;
+  useMachineStore.setState((store) => ({
+    context: { ...store.context, hasUnlocked: false, unlockedByPeek: false },
+  }));
+}
+
 function JumpButton({
   target,
   active,
@@ -166,6 +204,7 @@ function JumpButton({
       type="button"
       onClick={() => {
         useMachineStore.setState({ state: target });
+        releaseLatchesFor(target);
         syncDetectionFor(target);
       }}
       className={[

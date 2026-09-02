@@ -31,6 +31,27 @@ import { record } from '@/lib/diagnostics';
 
 export const effectRunner = new EffectRunner();
 
+/**
+ * The last `(state, event)` a guard refused, for the debug HUD.
+ *
+ * ── WHY THIS IS WORTH SURFACING ──────────────────────────────────────────
+ * A guard doing its job is silent by design, and `canUnlock` is the loudest
+ * example: once `hasUnlocked` latches, every later `HOLD_COMPLETE` is dropped.
+ * That is correct — it is the whole point of the latch — but from the outside
+ * it looks like the gesture stopped working, because the ring still fills and
+ * the status pill still reads "Sempurna". Both read `holdProgress`, which knows
+ * nothing about the machine.
+ *
+ * Recording it makes "why did nothing happen?" answerable in one glance instead
+ * of a debugging session.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+let lastBlocked: string | null = null;
+
+export function lastBlockedTransition(): string | null {
+  return lastBlocked;
+}
+
 const isDev = process.env.NODE_ENV !== 'production';
 
 interface MachineStore {
@@ -52,6 +73,7 @@ export const useMachineStore = create<MachineStore>((set, get) => ({
     const result = reduce(state, context, event, {
       strict: isDev,
       onIllegal: (message) => {
+        lastBlocked = message;
         record(message);
       },
     });
