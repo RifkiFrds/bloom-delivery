@@ -379,3 +379,42 @@ describe('asynchronous facts must be legal wherever they land', () => {
     }
   });
 });
+
+describe('terminal states end every running subsystem', () => {
+  /**
+   * A `FATAL` raised from the gesture stage used to leave the mercy ladder
+   * armed. The next rung then emitted `MERCY_TICK` into `FATAL_ERROR` and
+   * crashed the screen whose entire job is to be the last thing that works.
+   */
+  it('FATAL_ERROR stops detection and the mercy ladder', () => {
+    const result = reduce(
+      'GESTURE_HOLDING',
+      ctx(),
+      { type: 'FATAL', diagnostic: 'boom' },
+      { strict: true },
+    );
+
+    expect(result.state).toBe('FATAL_ERROR');
+    const kinds = result.effects.map((effect) => effect.kind);
+    expect(kinds).toContain('mercy.stop');
+    expect(kinds).toContain('detection.stop');
+  });
+
+  it('UNLOCKING stops the ladder on every entry path, including replay', () => {
+    for (const [state, event] of [
+      ['GESTURE_HOLDING', { type: 'HOLD_COMPLETE' }],
+      ['SEEKING_GESTURE', { type: 'MERCY_UNLOCK' }],
+      ['SOLO_PROMPT', { type: 'PEEK_ALONE' }],
+      ['CAMERA_DENIED', { type: 'SKIP_TO_LETTER' }],
+      ['RESTING', { type: 'REPLAY_TAPPED' }],
+    ] as const satisfies readonly (readonly [State, MachineEvent])[]) {
+      const seed = state === 'RESTING' ? ctx({ hasUnlocked: true }) : ctx();
+      const result = reduce(state, seed, event, { strict: true });
+      expect(result.state, state).toBe('UNLOCKING');
+      expect(
+        result.effects.map((effect) => effect.kind),
+        state,
+      ).toContain('mercy.stop');
+    }
+  });
+});

@@ -33,6 +33,12 @@ export type Effect =
   | { readonly kind: 'mercy.start' }
   | { readonly kind: 'mercy.pause' }
   | { readonly kind: 'mercy.resume' }
+  /**
+   * Ends the ladder and DISARMS it. `pause` alone is not enough: a paused
+   * timer is still armed, so the next `VISIBILITY_VISIBLE` — an any-state row —
+   * would resume it into a state with no `MERCY_TICK` row.
+   */
+  | { readonly kind: 'mercy.stop' }
   | { readonly kind: 'persist.write'; readonly key: PersistKey; readonly value: string }
   | { readonly kind: 'scene.mount3d' }
   | { readonly kind: 'scene.degradeToLite' }

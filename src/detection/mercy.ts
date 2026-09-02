@@ -34,16 +34,31 @@ export class MercyTimer {
   private level: MercyLevel = 0;
   private handle: number | null = null;
   private lastTickAt = 0;
+  /**
+   * ARMED between `start()` and `stop()` — the gesture stage, and only that.
+   *
+   * ── WHY THIS IS SEPARATE FROM `handle` ──────────────────────────────────
+   * `mercy.pause` and `mercy.resume` are dispatched by the ANY-STATE
+   * `VISIBILITY_HIDDEN` / `VISIBILITY_VISIBLE` rows, so they arrive in every
+   * state, including ones where the ladder was never started.
+   *
+   * With `resume()` keyed on `handle === null` alone, tabbing away and back
+   * during `SEEKING_FACES` STARTED the ladder from zero, and twenty seconds
+   * later it emitted `MERCY_TICK` into a state with no row for it.
+   *
+   * A lifecycle signal must never START a subsystem that was not already
+   * running. It may only restore one.
+   * ─────────────────────────────────────────────────────────────────────────
+   */
+  private armed = false;
 
   /** Called on entering `SEEKING_GESTURE`. Restarts the ladder from zero. */
   start(): void {
     this.stop();
+    this.armed = true;
     this.activeMs = 0;
     this.level = 0;
-    this.lastTickAt = performance.now();
-    this.handle = window.setInterval(() => {
-      this.tick();
-    }, TICK_MS);
+    this.run();
   }
 
   /** Freezes the accumulator. The budget is preserved exactly. */
@@ -54,18 +69,24 @@ export class MercyTimer {
   }
 
   resume(): void {
-    if (this.handle !== null) return;
-    // Reset the delta baseline so the paused span contributes nothing.
-    this.lastTickAt = performance.now();
-    this.handle = window.setInterval(() => {
-      this.tick();
-    }, TICK_MS);
+    // Not armed = the gesture stage has not begun, or is already over.
+    if (!this.armed || this.handle !== null) return;
+    this.run();
   }
 
   stop(): void {
     this.pause();
+    this.armed = false;
     this.activeMs = 0;
     this.level = 0;
+  }
+
+  /** Starts the interval with a fresh delta baseline, so a pause costs zero. */
+  private run(): void {
+    this.lastTickAt = performance.now();
+    this.handle = window.setInterval(() => {
+      this.tick();
+    }, TICK_MS);
   }
 
   private tick(): void {

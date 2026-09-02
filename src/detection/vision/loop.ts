@@ -82,6 +82,8 @@ export class DetectionLoop {
   private readonly hzWindow: number[] = [];
   private timestampCursor = 0;
   private paused = false;
+  /** True between `start()` and `stop()`. Gates `pause`/`resume` — see below. */
+  private armed = false;
 
   /**
    * @param onTick performs the inference and returns its measured duration in
@@ -99,6 +101,7 @@ export class DetectionLoop {
 
   start(): void {
     if (this.rafId !== null) return;
+    this.armed = true;
     this.paused = false;
     this.lastRunAt = 0;
     this.lastTickAt = performance.now();
@@ -111,6 +114,7 @@ export class DetectionLoop {
    * (Doc 02 §2.15 E2).
    */
   stop(): void {
+    this.armed = false;
     if (this.rafId === null) return;
     cancelAnimationFrame(this.rafId);
     this.rafId = null;
@@ -120,15 +124,25 @@ export class DetectionLoop {
    * Pause without tearing down. The rAF is cancelled, so a backgrounded tab
    * costs nothing; `resume()` restarts from a clean accumulator so the first
    * tick back does not deliver a multi-second `dt`.
+   *
+   * `armed` survives a pause and is cleared by `stop()`, so a pause/resume pair
+   * arriving before the loop ever ran — which the ANY-state visibility rows
+   * make routine — cannot start it. A lifecycle signal restores a subsystem; it
+   * never starts one.
    */
   pause(): void {
+    if (!this.armed) return;
     this.paused = true;
-    this.stop();
+    cancelAnimationFrame(this.rafId ?? 0);
+    this.rafId = null;
   }
 
   resume(): void {
-    if (!this.paused) return;
-    this.start();
+    if (!this.armed || !this.paused || this.rafId !== null) return;
+    this.paused = false;
+    this.lastRunAt = 0;
+    this.lastTickAt = performance.now();
+    this.pump();
   }
 
   get running(): boolean {

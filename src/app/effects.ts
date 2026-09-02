@@ -190,6 +190,9 @@ export function registerEffectHandlers(): void {
   effectRunner.register('mercy.resume', () => {
     mercyTimer.resume();
   });
+  effectRunner.register('mercy.stop', () => {
+    mercyTimer.stop();
+  });
 
   // The teardown needs the detection layer's two cancellation callbacks, in
   // the order `camera/teardown.ts` fixes: cancel the loop, THEN close the tasks.
@@ -212,7 +215,6 @@ function performTeardown(): void {
   }
 
   cancelAllTimers();
-  mercyTimer.stop();
   const result = cameraRuntime.teardown(cancelDetectionLoop, closeVisionTasks);
   record(`teardown: assertion ${result.assertionPassed ? 'passed' : 'FAILED'}`);
 }

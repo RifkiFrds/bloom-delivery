@@ -34,8 +34,21 @@ const ENTRY: Partial<Record<State, readonly Effect[]>> = {
    */
   UNLOCKING: [
     { kind: 'camera.teardown' },
+    // Declared here rather than left to the teardown handler, which
+    // short-circuits on replay. The ladder must end on every path.
+    { kind: 'mercy.stop' },
     { kind: 'timer.start', id: 'unlockBeat', ms: BEATS_UNLOCK_MS },
   ],
+
+  /**
+   * A fatal error is terminal, and everything still running must stop with it.
+   *
+   * Without this, a `FATAL` raised from the gesture stage left the mercy ladder
+   * armed and ticking; the next rung then emitted `MERCY_TICK` into
+   * `FATAL_ERROR`, crashing the screen whose entire job is to be the last thing
+   * that still works.
+   */
+  FATAL_ERROR: [{ kind: 'detection.stop' }, { kind: 'mercy.stop' }],
 };
 
 export function entryEffects(state: State): readonly Effect[] {
