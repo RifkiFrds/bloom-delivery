@@ -25,6 +25,7 @@
 import { useEffect } from 'react';
 
 import { audio } from '@/audio/manager';
+import { CapturedMoment } from '@/components/CapturedMoment';
 import { MuteToggle } from '@/components/MuteToggle';
 import { SEQUENCE } from '@/content/copy';
 import { announce } from '@/lib/live';
@@ -46,6 +47,7 @@ export function Delivery(): React.ReactElement {
   return (
     <div className="relative min-h-[100dvh] w-full overflow-hidden">
       <MuteToggle />
+      <CapturedMoment />
       <Stage beat="delivery" />
     </div>
   );
@@ -60,6 +62,7 @@ export function Bloom(): React.ReactElement {
   return (
     <div className="relative min-h-[100dvh] w-full overflow-hidden">
       <MuteToggle />
+      <CapturedMoment />
       <Stage beat="bloom" />
     </div>
   );

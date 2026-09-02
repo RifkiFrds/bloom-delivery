@@ -30,6 +30,7 @@ import { motion } from 'motion/react';
 import { useEffect } from 'react';
 
 import { audio } from '@/audio/manager';
+import { CapturedMoment } from '@/components/CapturedMoment';
 import { UNLOCK } from '@/content/copy';
 import { alert } from '@/lib/live';
 import { duration, easing, resolveSpring } from '@/motion/tokens';
@@ -52,6 +53,9 @@ export function Unlocking(): React.ReactElement {
 
   return (
     <div className="relative flex min-h-[100dvh] w-full items-center justify-center overflow-hidden">
+      {/* Their faces at the instant the heart landed. See the component for
+          why this is a frozen frame and not a live camera. */}
+      <CapturedMoment />
       {/* The 35% darken. Instant under reduced motion. */}
       <motion.div
         aria-hidden="true"

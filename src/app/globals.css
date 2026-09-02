@@ -227,6 +227,23 @@ body {
 }
 
 /**
+ * The kept moment — the still grabbed at the instant the heart landed.
+ *
+ * MIRRORED for display, matching the preview the two of them were just looking
+ * at. The SAVED file is not (`lib/photo.ts`): a keepsake with backwards text in
+ * it is the embarrassing version, but a corner preview that suddenly flips is
+ * the disorienting one.
+ */
+.moment-frame {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+/**
  * The realtime status pill — Doc 04 §A.6.
  *
  * Opaque at every state, because it sits over live video and text over video

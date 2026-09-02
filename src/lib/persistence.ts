@@ -56,6 +56,36 @@ export function readMotionPreference(): MotionPreference {
   return value === 'full' || value === 'reduced' ? value : null;
 }
 
+/** The four keys, in one list, so a clear cannot miss one (Doc 02 §6.6). */
+const ALL_KEYS: readonly PersistKey[] = [
+  'bloom_unlocked',
+  'bloom_muted',
+  'bloom_motion',
+  'bloom_peeked',
+];
+
+/**
+ * Wipes every persisted flag. Used by the `?reset=1` development switch.
+ *
+ * A returning visitor is routed `BOOT → RESTING` by `bloom_unlocked`, which is
+ * correct in production and makes the landing unreachable while testing. There
+ * is deliberately no in-app control for this: the flags ARE the returning-
+ * visitor behaviour, and a button that clears them would be a button that
+ * throws away someone's letter.
+ */
+export function clearPersisted(): void {
+  for (const key of ALL_KEYS) {
+    memory.delete(key);
+    const store = storage();
+    if (store === null) continue;
+    try {
+      store.removeItem(key);
+    } catch {
+      /* blocked storage — the in-memory shim is already cleared */
+    }
+  }
+}
+
 /** True when storage is genuinely unavailable — surfaced in the debug panel. */
 export function isEphemeral(): boolean {
   return storage() === null;

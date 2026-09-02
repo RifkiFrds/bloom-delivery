@@ -82,10 +82,25 @@ export const HANDS = {
 export const G1 = {
   /** C1 — hands large enough. THE number that governs the project. */
   minPalmScale: 0.045,
-  /** C2 — thumb junction: dist(A4,B4) <= this × S̄ × M */
-  thumbJunction: 0.55,
-  /** C3 — index junction: dist(A8,B8) <= this × S̄ × M */
-  indexJunction: 0.7,
+  /**
+   * C2 — thumb junction: dist(A4,B4) <= this × S̄ × M
+   *
+   * ── RELAXED 0.55 → 0.85, DELIBERATELY ──────────────────────────────────
+   * The hands no longer have to MEET. In the pose people actually adopt, the
+   * thumbs come close and the fingers shape the heart — demanding contact made
+   * the gate about precision rather than about the gesture, and precision is
+   * not what anyone is trying to express.
+   *
+   * This does widen the gate, and the honest accounting is: C2 and C3 were
+   * never the false-positive defence. C5 (wrist aperture) and C6 (palm angle)
+   * are, and both are untouched. Clasped hands still fail C5 because the wrists
+   * come together; a high five still fails C6 and C7 because the palms are
+   * parallel and the fingers extended. Doc 03 §8.1's table survives intact.
+   * ─────────────────────────────────────────────────────────────────────────
+   */
+  thumbJunction: 0.85,
+  /** C3 — index junction: dist(A8,B8) <= this × S̄ × M. Relaxed 0.70 → 1.00. */
+  indexJunction: 1.0,
   /** C5 — aperture: dist(A0,B0) >= this × S̄ / M. Rejects clasped/prayer. */
   aperture: 0.8,
   /** C6 — mirrored posture: angle(palmDir A, palmDir B) within this range. */

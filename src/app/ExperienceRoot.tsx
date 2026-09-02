@@ -22,7 +22,8 @@ import { DebugPanel } from '@/components/DebugPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { bus } from '@/events/bus';
 import { buildBootPayload, probeCapabilities } from '@/lib/capability';
-import { activeFlags, isSoloMode } from '@/lib/devFlags';
+import { activeFlags, isResetMode, isSoloMode } from '@/lib/devFlags';
+import { clearPersisted } from '@/lib/persistence';
 import { detectionRuntime } from '@/detection/runtime';
 import { record } from '@/lib/diagnostics';
 import { ScenePlaceholder } from '@/scenes/ScenePlaceholder';
@@ -40,6 +41,13 @@ export default function ExperienceRoot(): React.ReactElement {
   // ── BOOT: capability routing, once, before any UI commits ─────────────────
   useEffect(() => {
     if (useMachineStore.getState().state !== 'BOOT') return;
+
+    // Before the probe, not after: `buildBootPayload` reads these flags, and
+    // `hasPriorUnlock` routes straight past the landing on the strength of one.
+    if (isResetMode()) {
+      clearPersisted();
+      record('dev: persisted flags cleared (?reset=1)');
+    }
 
     const report = probeCapabilities();
     record(

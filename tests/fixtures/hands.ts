@@ -280,9 +280,9 @@ export function mirroredFingerHearts(): { handA: Hand; handB: Hand } {
  * testable behaviourally rather than tautologically.
  */
 export function borderlineHeartPair(): { handA: Hand; handB: Hand } {
-  // Level 0 thumb limit = 0.55 × S̄ = 0.033. Level 1 = ×1.25 = 0.04125.
-  // Place the thumbs 0.037 apart: rejected at 0, accepted at 1.
-  const gap = 0.037;
+  // Level 0 thumb limit = 0.85 × S̄ = 0.051. Level 1 = ×1.25 = 0.0638.
+  // Place the thumbs 0.057 apart: rejected at 0, accepted at 1.
+  const gap = 0.057;
   const handA = makeHand({
     wrist: { x: 0.36, y: 0.62 },
     palmAngleDeg: -55,

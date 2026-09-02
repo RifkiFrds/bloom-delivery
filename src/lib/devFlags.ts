@@ -43,6 +43,19 @@ export function isSoloMode(): boolean {
   return flag('solo');
 }
 
+/**
+ * `?reset=1` — start from the very beginning.
+ *
+ * Clears the four persisted flags before `BOOT` reads them, so the run begins
+ * at `LANDING` instead of being routed straight to `RESTING` by a previous
+ * completion. Without it, the landing page is unreachable the moment you have
+ * finished the experience once — which is exactly when you most want to test
+ * it again.
+ */
+export function isResetMode(): boolean {
+  return flag('reset');
+}
+
 /** `?debug=1` — the detection HUD. Read here so every flag has one home. */
 export function isDebugMode(): boolean {
   return flag('debug');
@@ -52,6 +65,7 @@ export function isDebugMode(): boolean {
 export function activeFlags(): readonly string[] {
   const active: string[] = [];
   if (isSoloMode()) active.push('solo');
+  if (isResetMode()) active.push('reset');
   if (isDebugMode()) active.push('debug');
   return active;
 }

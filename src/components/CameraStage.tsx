@@ -86,9 +86,16 @@ export function CameraStage({
     // the palm-scale gate starts to matter. `min(96vw, 1120px)` keeps the phone
     // layout byte for byte identical — 96vw is smaller than the cap at every
     // phone width — and lets the desktop stage fill the room it has.
-    <div className="flex min-h-[100dvh] w-full flex-col items-center px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
-      <div className="flex w-full max-w-[min(96vw,1120px)] flex-1 flex-col gap-3">
-        <div className="relative mt-14 min-h-[52dvh] w-full flex-1 overflow-hidden rounded-[40px] border-3 border-ink bg-cream shadow-[8px_8px_0_#111111]">
+    <div className="flex h-[100dvh] w-full flex-col items-center overflow-hidden px-3 pt-[max(0.5rem,env(safe-area-inset-top))] pb-[max(0.5rem,env(safe-area-inset-bottom))]">
+      <div className="flex w-full max-w-[min(96vw,1120px)] min-h-0 flex-1 flex-col gap-2">
+        {/*
+          `h-[100dvh]` with `min-h-0` on the column, not `min-h-[100dvh]`.
+          A min-height lets children push the page TALLER than the viewport, so
+          `flex-1` on the preview resolved against content instead of against
+          the screen and left the bottom short. A fixed height plus `min-h-0`
+          makes the preview take every pixel the HUD and the hatch do not.
+        */}
+        <div className="relative mt-12 min-h-0 w-full flex-1 overflow-hidden rounded-[40px] border-3 border-ink bg-cream shadow-[8px_8px_0_#111111]">
           {/* The runtime's persistent <video> is appended here. */}
           <div ref={hostRef} className="absolute inset-0" />
 
@@ -119,9 +126,9 @@ export function CameraStage({
         {/* The text alternative for the preview. */}
         <p className="sr-only">{SEEKING_FACES.videoDescription}</p>
 
-        {hud}
+        <div className="shrink-0">{hud}</div>
 
-        <div className="mt-auto flex flex-col gap-2 pt-2">{footer}</div>
+        <div className="flex shrink-0 flex-col gap-2">{footer}</div>
       </div>
     </div>
   );

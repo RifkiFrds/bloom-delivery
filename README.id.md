@@ -133,6 +133,30 @@ siapa. Sandarkan HP atau pakai laptop supaya kedua tangan bebas.
 > Sudah diperbaiki, tapi `?solo=1` tetap cara yang jujur: pipeline aslinya
 > benar-benar berjalan.
 
+### Mulai dari paling awal — `?reset=1`
+
+```
+https://<ip>:3000/d/coba?reset=1&solo=1&debug=1
+```
+
+Begitu kamu pernah menyelesaikan satu run, `bloom_unlocked` tersimpan dan
+`BOOT` **melompat langsung ke `RESTING`** — halaman landing jadi tidak bisa
+dicapai lagi. Itu perilaku yang benar untuk pengunjung yang kembali, dan
+menyebalkan saat sedang mengetes.
+
+`?reset=1` menghapus keempat flag (`bloom_unlocked`, `bloom_muted`,
+`bloom_motion`, `bloom_peeked`) **sebelum** `BOOT` membacanya, jadi run-nya
+mulai dari `LANDING`.
+
+Setara manual di console browser:
+
+```js
+['bloom_unlocked', 'bloom_muted', 'bloom_motion', 'bloom_peeked'].forEach((k) =>
+  localStorage.removeItem(k),
+);
+location.reload();
+```
+
 Flag ini **mati total di build produksi** (`NODE_ENV`), sama seperti `?debug=1`.
 Tidak ada versi yang tersimpan dan tidak ada toggle di dalam aplikasi — flag
 yang bertahan setelah reload adalah flag yang orang lupa masih menyala.

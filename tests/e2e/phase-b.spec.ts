@@ -94,3 +94,21 @@ test.describe('the 3D stage actually renders', () => {
     await openIt();
   });
 });
+
+test.describe('the kept moment', () => {
+  /**
+   * The corner polaroid shows `capturedFrame` — the still taken at the instant
+   * the heart landed. On the Lite path there was never a camera, so there is no
+   * frame, and the corner must be CLEAR rather than an empty box.
+   *
+   * A placeholder here would be the same defect as a button that pretends to
+   * work: it promises a photo that does not exist.
+   */
+  test('is absent when there was never a camera', async ({ page }) => {
+    await page.goto(EXPERIENCE);
+    await jumpTo(page, 'DELIVERY');
+
+    // No stream was ever acquired in this run, so no frame was captured.
+    await expect(page.locator('figure')).toHaveCount(0);
+  });
+});
