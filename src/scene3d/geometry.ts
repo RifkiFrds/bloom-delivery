@@ -35,9 +35,7 @@ import {
   BoxGeometry,
   BufferAttribute,
   CylinderGeometry,
-  LatheGeometry,
   PlaneGeometry,
-  Vector2,
   type BufferGeometry,
   type Color,
 } from 'three';
@@ -59,43 +57,106 @@ function paint(geometry: BufferGeometry, color: Color): BufferGeometry {
 }
 
 /**
- * The tulip head — a lathe of the classic cup profile.
+ * ── A TULIP IS PETALS, NOT A CUP ─────────────────────────────────────────
+ * The head was a `LatheGeometry` — one surface of revolution, which is a vase.
+ * A real tulip is SIX OVERLAPPING PETALS, each wide near the base, tapering to
+ * a rounded point, cupped inward along its length and curled at the edges. The
+ * GAPS between them are most of what makes the silhouette read as a flower.
  *
- * 10 profile points × 8 radial segments ≈ 144 triangles. The budget allows
- * 1,000 per tulip; staying far under it is what leaves room for 60 instances
- * plus their outline hulls inside the 45,000-triangle scene cap.
+ * So each petal is a small warped grid, placed radially. Six petals at 30
+ * triangles is 180 for the head — a fraction of Doc 01 §8.4's 1,000-per-tulip
+ * allowance, which is what leaves room for 60 of them plus their outline hulls
+ * inside the 45,000-triangle scene cap.
+ * ─────────────────────────────────────────────────────────────────────────
  */
-const HEAD_PROFILE = [
-  new Vector2(0.0, 0.0),
-  new Vector2(0.18, 0.02),
-  new Vector2(0.3, 0.1),
-  new Vector2(0.36, 0.26),
-  new Vector2(0.36, 0.46),
-  new Vector2(0.32, 0.62),
-  new Vector2(0.26, 0.72),
-  new Vector2(0.16, 0.78),
-  new Vector2(0.06, 0.8),
-  new Vector2(0.0, 0.8),
-];
+const PETALS_PER_HEAD = 6;
+
+/**
+ * One petal, warped out of a flat grid.
+ *
+ * `u` runs across the width, `v` from base to tip. Three shaping terms:
+ *   WIDTH  a sine profile — pinched at the base, widest near 40%, pointed at
+ *          the tip. A rectangle reads as a leaf; this reads as a petal.
+ *   LEAN   the petal tilts outward as it rises — the bowl of the cup.
+ *   CURL   the outer edges roll inward, strongest at mid-height, which is what
+ *          catches the light along the rim.
+ */
+function buildPetal(color: Color, openness: number): BufferGeometry {
+  const geometry = new PlaneGeometry(1, 1, 3, 5);
+  const position = geometry.attributes.position;
+  if (position === undefined) throw new Error('petal geometry has no positions');
+
+  for (let i = 0; i < position.count; i += 1) {
+    const u = position.getX(i) + 0.5;
+    const v = position.getY(i) + 0.5;
+
+    const width = 0.46 * Math.sin(Math.PI * Math.pow(v, 0.72));
+    const lean = Math.sin(v * Math.PI * 0.78) * openness;
+    const curl = Math.pow(Math.abs(u - 0.5) * 2, 2) * 0.3 * Math.sin(v * Math.PI);
+
+    position.setXYZ(i, (u - 0.5) * 2 * width, v * 0.92, 0.1 + lean - curl);
+  }
+
+  position.needsUpdate = true;
+  geometry.computeVertexNormals();
+  return paint(geometry, color);
+}
+
+/** A head: six petals, alternately outer and inner, the way a tulip sits. */
+function buildHead(color: Color): BufferGeometry {
+  const petals: BufferGeometry[] = [];
+
+  for (let i = 0; i < PETALS_PER_HEAD; i += 1) {
+    // The inner ring sits tighter and shorter, so the flower has a CENTRE
+    // instead of being one ring of identical blades.
+    const inner = i % 2 === 1;
+    const petal = buildPetal(color, inner ? 0.16 : 0.3);
+    if (inner) petal.scale(0.82, 0.88, 0.8);
+    petal.rotateY((i / PETALS_PER_HEAD) * Math.PI * 2);
+    petals.push(petal);
+  }
+
+  const merged = mergeGeometries(petals, false);
+  for (const petal of petals) petal.dispose();
+  merged.computeVertexNormals();
+  return merged;
+}
 
 function buildTulip(headColor: Color): BufferGeometry {
-  const head = paint(new LatheGeometry(HEAD_PROFILE, 8), headColor);
-  head.translate(0, 1.35, 0);
+  const head = buildHead(headColor);
+  head.translate(0, 1.28, 0);
 
-  const stem = paint(new CylinderGeometry(0.045, 0.06, 1.4, 6, 1), PALETTE.green);
-  stem.translate(0, 0.7, 0);
+  const stem = paint(new CylinderGeometry(0.04, 0.062, 1.45, 5, 1), PALETTE.green);
+  stem.translate(0, 0.72, 0);
 
-  // One leaf: a squashed, rotated plane. Two triangles, and at this silhouette
-  // scale it reads as a leaf under the outline hull.
-  const leaf = paint(new PlaneGeometry(0.5, 0.22), PALETTE.green);
-  leaf.rotateZ(0.55);
-  leaf.rotateY(0.3);
-  leaf.translate(0.2, 0.55, 0);
+  // Tulip leaves are long, broad, strap-shaped and ARCHED. Two, opposed, is the
+  // read — the previous single flat quad was a leaf-coloured rectangle.
+  const leaves: BufferGeometry[] = [];
+  for (const side of [-1, 1]) {
+    const leaf = new PlaneGeometry(0.34, 1.05, 1, 4);
+    const position = leaf.attributes.position;
+    if (position !== undefined) {
+      for (let i = 0; i < position.count; i += 1) {
+        const v = position.getY(i) + 0.525;
+        position.setXYZ(
+          i,
+          position.getX(i) * (1 - Math.pow(v, 2.2)) * 1.6,
+          position.getY(i),
+          Math.sin(v * Math.PI * 0.5) * 0.26,
+        );
+      }
+      position.needsUpdate = true;
+    }
+    leaf.rotateZ(side * 0.42);
+    leaf.rotateY(side > 0 ? 0.5 : -0.5);
+    leaf.translate(side * 0.16, 0.6, 0);
+    leaves.push(paint(leaf, PALETTE.green));
+  }
 
-  const merged = mergeGeometries([head, stem, leaf], false);
+  const merged = mergeGeometries([head, stem, ...leaves], false);
   head.dispose();
   stem.dispose();
-  leaf.dispose();
+  for (const leaf of leaves) leaf.dispose();
   merged.computeVertexNormals();
   return merged;
 }

@@ -50,6 +50,7 @@ export function BoxDrop({
   const bodyRef = useRef<Group>(null);
   const lidRef = useRef<Group>(null);
   const dustRef = useRef<Mesh>(null);
+  const shadowRef = useRef<Mesh>(null);
   const material = useMemo(() => createToonMaterial(), []);
 
   useFrame(() => {
@@ -72,11 +73,27 @@ export function BoxDrop({
       const t = elapsed / FALL_S;
       body.position.y = 9 * (1 - t * t);
       body.rotation.z = -0.21 * (1 - t);
-      body.scale.set(1, 1, 1);
+      // A slow tumble on the other axis, so it falls like an object rather than
+      // like a sprite descending.
+      body.rotation.y = t * 0.9;
+      // Stretched along the fall axis at speed, squashed on the others. Volume
+      // is roughly preserved, which is what makes it read as physical.
+      const stretch = 1 + t * 0.16;
+      body.scale.set(1 / Math.sqrt(stretch), stretch, 1 / Math.sqrt(stretch));
     } else {
       body.position.y = 0;
       body.rotation.z = 0;
       applyImpact(body.scale, elapsed - FALL_S);
+    }
+
+    // ── Ground shadow: reads the box's height, every frame. ─────────────────
+    const shadow = shadowRef.current;
+    if (shadow !== null) {
+      const height = Math.max(0, body.position.y);
+      const spread = 1.05 + height * 0.14;
+      shadow.scale.set(spread, spread, spread);
+      const material = shadow.material as { opacity: number };
+      material.opacity = 0.2 / (1 + height * 0.35);
     }
 
     // ── Dust ring: expands and fades over 180 ms from the landing. ──────────
@@ -121,6 +138,22 @@ export function BoxDrop({
         />
         <mesh geometry={BOX_LID_GEOMETRY} material={material} />
       </group>
+
+      {/*
+        The ground shadow. It tracks the box's HEIGHT, not its position: small
+        and dark when the box is about to land, wide and faint while it is still
+        falling. Without it the box reads as sliding down a wall rather than
+        falling through a room — Doc 04 §C.4 rule 4, "nothing moves alone".
+      */}
+      <mesh ref={shadowRef} rotation={[-Math.PI / 2, 0, 0]} position={[0, 0.005, 0]}>
+        <circleGeometry args={[1, 24]} />
+        <meshBasicMaterial
+          color="#111111"
+          transparent
+          opacity={0.14}
+          depthWrite={false}
+        />
+      </mesh>
 
       {/* The dust ring. A flat disc, no outline — it is an effect, not an object. */}
       <mesh

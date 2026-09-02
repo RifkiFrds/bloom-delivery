@@ -61,9 +61,18 @@ export function Resting(): React.ReactElement {
 
   const savePhoto = (): void => {
     if (savedFrame === null) return;
-    const composite = composePhoto({ frame: savedFrame, recipientName });
-    if (composite === null) return;
-    downloadPhoto(composite, `bloom-delivery-${recipientName.replace(/\s+/g, '-')}.png`);
+    // The caption is set in the app's own display face, which `next/font` loads
+    // asynchronously. Composing before it arrives silently falls back to a
+    // system font — the keepsake would be the one artefact in the product set
+    // in the wrong typeface.
+    void document.fonts.ready.then(() => {
+      const composite = composePhoto({ frame: savedFrame, recipientName });
+      if (composite === null) return;
+      downloadPhoto(
+        composite,
+        `bloom-delivery-${recipientName.replace(/\s+/g, '-')}.png`,
+      );
+    });
   };
 
   return (
