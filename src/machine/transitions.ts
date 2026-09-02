@@ -101,7 +101,10 @@ export const TRANSITIONS: readonly Transition[] = [
     event: 'BOOT_OK',
     guard: 'hasPriorUnlock',
     to: 'RESTING',
-    assign: bootAssign,
+    // Doc 02 §5 calls this row's side effect "restore ctx". The latch is part
+    // of that: a returning visitor HAS unlocked, and leaving `hasUnlocked`
+    // false made `RESTING` mistake them for someone mid-peek.
+    assign: (input) => ({ ...bootAssign(input), hasUnlocked: true }),
   },
   {
     from: ['BOOT'],
@@ -231,7 +234,9 @@ export const TRANSITIONS: readonly Transition[] = [
     event: 'PEEK_ALONE',
     guard: 'canUnlock',
     to: 'UNLOCKING',
-    assign: () => ({ peekedAlone: true }),
+    // Both flags: the historical one is persisted for the returning-visitor
+    // line, the per-run one seals THIS sequence and nothing after it.
+    assign: () => ({ peekedAlone: true, unlockedByPeek: true }),
     effects: () => [{ kind: 'persist.write', key: 'bloom_peeked', value: '1' }],
   },
 
@@ -332,7 +337,7 @@ export const TRANSITIONS: readonly Transition[] = [
   {
     from: ['BLOOM'],
     event: 'SEQUENCE_STEP_DONE',
-    guard: 'peekedAlone',
+    guard: 'unlockedByPeek',
     to: 'RESTING',
   },
   {

@@ -29,11 +29,14 @@ import { Stage } from './Stage';
 
 export function Message(): React.ReactElement {
   const motionSafe = useMachineStore(selectMotionSafe);
-  const { recipientName, peekedAlone, hasUnlocked } = useMachineStore(selectContext);
+  const { recipientName, peekedAlone, unlockedByPeek } = useMachineStore(selectContext);
 
   // A returning pair who peeked alone the first time get one extra line, so the
   // real unlock is acknowledged as different from the preview (Doc 04 §B.7).
-  const returning = peekedAlone && hasUnlocked;
+  //
+  // "They peeked before" AND "this is not another peek" — which is precisely
+  // what the copy claims: this one is the real one.
+  const returning = peekedAlone && !unlockedByPeek;
 
   const long = recipientName.length > 10;
 

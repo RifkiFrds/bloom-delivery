@@ -30,7 +30,7 @@ export const GUARD_NAMES = [
   'isTerminalCameraError',
   'isRecoverableCameraError',
   'hasPriorUnlock',
-  'peekedAlone',
+  'unlockedByPeek',
   'restoreFailed',
 ] as const;
 
@@ -109,8 +109,14 @@ function hasPriorUnlock({ event }: GuardInput): boolean {
   return event.type === 'BOOT_OK' && event.payload.priorUnlock;
 }
 
-function peekedAlone({ context }: GuardInput): boolean {
-  return context.peekedAlone;
+/**
+ * Seals `MESSAGE` and the letter behind the warm hold — but ONLY for a run that
+ * was itself a peek. Reading the persisted `peekedAlone` here would seal every
+ * future run too, permanently locking the letter away from someone whose only
+ * mistake was opening the link alone once (Doc 02 §2.10).
+ */
+function unlockedByPeek({ context }: GuardInput): boolean {
+  return context.unlockedByPeek;
 }
 
 function restoreFailed({ event }: GuardInput): boolean {
@@ -126,7 +132,7 @@ export const GUARDS: Readonly<Record<GuardName, (input: GuardInput) => boolean>>
   isTerminalCameraError,
   isRecoverableCameraError,
   hasPriorUnlock,
-  peekedAlone,
+  unlockedByPeek,
   restoreFailed,
 };
 

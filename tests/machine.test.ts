@@ -418,3 +418,110 @@ describe('terminal states end every running subsystem', () => {
     }
   });
 });
+
+/**
+ * ★ REGRESSION: the peek must not become a life sentence ★
+ *
+ * Reported as "stuck on 'The rest is for when you're together', Try again with
+ * them does nothing". Two defects, compounding:
+ *
+ *   A. `BOOT_OK [hasPriorUnlock] → RESTING` did not restore `hasUnlocked`, so a
+ *      returning visitor looked like someone mid-peek and got the hold instead
+ *      of their letter. "Try again with them" reloads — straight back into it.
+ *
+ *   B. The `BLOOM → RESTING` guard read the PERSISTED `peekedAlone`, so even
+ *      after unlocking properly the sequence diverted to the hold. Once
+ *      `bloom_peeked` was written, the letter was unreachable forever.
+ */
+describe('peek-alone must not seal future runs', () => {
+  const bootPayload = (
+    patch: Partial<{
+      priorUnlock: boolean;
+      peekedAlone: boolean;
+    }> = {},
+  ) =>
+    ({
+      type: 'BOOT_OK',
+      payload: {
+        tier: 'full',
+        motionSafe: true,
+        recipientName: 'Alya',
+        priorUnlock: false,
+        peekedAlone: false,
+        muted: false,
+        ...patch,
+      },
+    }) satisfies MachineEvent;
+
+  it('PEEK_ALONE marks BOTH the history and this run', () => {
+    const result = reduce('SOLO_PROMPT', ctx(), { type: 'PEEK_ALONE' }, { strict: true });
+
+    expect(result.state).toBe('UNLOCKING');
+    expect(result.context.peekedAlone).toBe(true);
+    expect(result.context.unlockedByPeek).toBe(true);
+  });
+
+  it('a peek run diverts BLOOM to the hold', () => {
+    const result = reduce(
+      'BLOOM',
+      ctx({ peekedAlone: true, unlockedByPeek: true }),
+      { type: 'SEQUENCE_STEP_DONE' },
+      { strict: true },
+    );
+    expect(result.state).toBe('RESTING');
+  });
+
+  /** ★ Defect B ★ — this returned RESTING, locking the letter away forever. */
+  it('a PROPER unlock reaches the letter even after an earlier peek', () => {
+    const result = reduce(
+      'BLOOM',
+      // Exactly the returning-visitor context: history says they peeked, this
+      // run says they did not.
+      ctx({ peekedAlone: true, unlockedByPeek: false }),
+      { type: 'SEQUENCE_STEP_DONE' },
+      { strict: true },
+    );
+    expect(result.state).toBe('MESSAGE');
+  });
+
+  /** ★ Defect A ★ — `hasUnlocked` false here is what showed them the hold. */
+  it('a returning visitor arrives at RESTING already unlocked', () => {
+    const result = reduce(
+      'BOOT',
+      ctx(),
+      bootPayload({ priorUnlock: true, peekedAlone: true }),
+      { strict: true },
+    );
+
+    expect(result.state).toBe('RESTING');
+    expect(result.context.hasUnlocked).toBe(true);
+    expect(result.context.peekedAlone).toBe(true);
+    // The flag that decides whether the hold shows. Never restored, by design.
+    expect(result.context.unlockedByPeek).toBe(false);
+  });
+
+  it('someone who only ever peeked starts over at LANDING', () => {
+    // The peek path never reaches LETTER_OPEN, so `bloom_unlocked` is never
+    // written — they get a clean run rather than a locked RESTING.
+    const result = reduce(
+      'BOOT',
+      ctx(),
+      bootPayload({ priorUnlock: false, peekedAlone: true }),
+      { strict: true },
+    );
+
+    expect(result.state).toBe('LANDING');
+    expect(result.context.unlockedByPeek).toBe(false);
+  });
+
+  it('replay from RESTING still works once the latch is restored', () => {
+    const result = reduce(
+      'RESTING',
+      ctx({ hasUnlocked: true }),
+      { type: 'REPLAY_TAPPED' },
+      { strict: true },
+    );
+    expect(result.state).toBe('UNLOCKING');
+    expect(result.context.skipCameraStage).toBe(true);
+  });
+});

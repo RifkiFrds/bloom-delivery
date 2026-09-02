@@ -41,7 +41,7 @@ import { Stage } from './Stage';
 
 export function Resting(): React.ReactElement {
   const motionSafe = useMachineStore(selectMotionSafe);
-  const { recipientName, peekedAlone, hasUnlocked } = useMachineStore(selectContext);
+  const { recipientName, unlockedByPeek } = useMachineStore(selectContext);
   const [savedFrame] = useState(() => cameraRuntime.frame());
 
   useEffect(() => {
@@ -50,7 +50,14 @@ export function Resting(): React.ReactElement {
 
   // Peek-alone hold: the box fell and the tulips bloomed, but the letter is
   // still for when they are together. A warm hold, never a refusal.
-  const holding = peekedAlone && !hasUnlocked;
+  //
+  // Keyed on THIS run, not on the persisted history. The previous condition —
+  // `peekedAlone && !hasUnlocked` — was true for any returning visitor who had
+  // ever peeked, because `hasUnlocked` is a per-session latch that a reload
+  // resets. They came back to their own finished letter and were shown the hold
+  // instead, with a "Try again with them" button that reloaded straight into
+  // the same screen.
+  const holding = unlockedByPeek;
 
   const savePhoto = (): void => {
     if (savedFrame === null) return;
