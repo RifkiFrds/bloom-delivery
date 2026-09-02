@@ -114,46 +114,138 @@ export function maskFrame(
 }
 
 // ── The design, authored once in local units ────────────────────────────────
+//
+// Eyes sit at (±0.5, 0); one unit is the interocular distance. Everything below
+// is authored in that frame, so scale and head roll are applied once at draw
+// time and no shape has to know about them.
 
-/** Outer shell: an angular brow piece, wider at the temples than at the brow. */
-const SHELL: readonly (readonly [number, number])[] = [
-  [-1.32, -0.18],
-  [-1.18, -0.72],
-  [-0.72, -1.06],
-  [0, -1.16],
-  [0.72, -1.06],
-  [1.18, -0.72],
-  [1.32, -0.18],
-  [1.16, 0.36],
-  [0.86, 0.62],
-  [0.5, 0.52],
-  [0, 0.42],
-  [-0.5, 0.52],
-  [-0.86, 0.62],
-  [-1.16, 0.36],
+/**
+ * A FULL-FACE shell — the silhouette is what gives a hero mask its weight, and
+ * the previous brow-only band had none.
+ *
+ * The fill is semi-transparent on purpose. An opaque mask would hide the two
+ * faces from each other, in an experience whose entire subject is two people
+ * looking at each other. So the outline and the lattice are solid and the shell
+ * is a wash: the graphic reads at full strength, the person reads through it.
+ */
+export const SHELL: readonly (readonly [number, number])[] = [
+  [0, -1.72],
+  [0.62, -1.6],
+  [1.08, -1.16],
+  [1.32, -0.5],
+  [1.36, 0.24],
+  [1.22, 0.98],
+  [0.94, 1.62],
+  [0.52, 2.08],
+  [0, 2.24],
+  [-0.52, 2.08],
+  [-0.94, 1.62],
+  [-1.22, 0.98],
+  [-1.36, 0.24],
+  [-1.32, -0.5],
+  [-1.08, -1.16],
+  [-0.62, -1.6],
 ];
 
-/** Facet chords. Geometric, deliberately NOT radial — a web is the thing to avoid. */
-const FACETS: readonly (readonly [number, number, number, number])[] = [
-  [-1.18, -0.72, -0.24, -0.5],
-  [1.18, -0.72, 0.24, -0.5],
-  [-0.72, -1.06, -0.34, -0.28],
-  [0.72, -1.06, 0.34, -0.28],
-  [0, -1.16, 0, -0.34],
-  [-1.32, -0.18, -0.9, 0.1],
-  [1.32, -0.18, 0.9, 0.1],
-  [-0.24, -0.5, 0.24, -0.5],
+/**
+ * ── THE LATTICE IS A LEAF, NOT A WEB ─────────────────────────────────────
+ * A radial web converging on one point is the protected part of the reference,
+ * and it is also the wrong idea for this product. This is a BOTANICAL vein
+ * structure: one central stem with paired veins branching outward and up, which
+ * is dense and graphic in the same way while belonging to a gift of flowers.
+ * ─────────────────────────────────────────────────────────────────────────
+ *
+ * `[x1, y1, cx, cy, x2, y2]` — quadratic, so every vein is a curve. A straight
+ * line is the thing that makes an overlay read as a wireframe.
+ */
+export const VEINS: readonly (readonly number[])[] = [
+  // The stem, top to chin.
+  [0, -1.66, 0, 0.2, 0, 2.2],
+
+  // Upper crown pairs.
+  [0, -1.3, -0.5, -1.44, -0.96, -1.16],
+  [0, -1.3, 0.5, -1.44, 0.96, -1.16],
+  [0, -0.86, -0.66, -1.08, -1.2, -0.72],
+  [0, -0.86, 0.66, -1.08, 1.2, -0.72],
+  [0, -0.42, -0.74, -0.62, -1.32, -0.3],
+  [0, -0.42, 0.74, -0.62, 1.32, -0.3],
+
+  // Lower pairs, sweeping down past the cheeks.
+  [0, 0.72, -0.7, 0.72, -1.24, 1.02],
+  [0, 0.72, 0.7, 0.72, 1.24, 1.02],
+  [0, 1.24, -0.62, 1.3, -1.0, 1.66],
+  [0, 1.24, 0.62, 1.3, 1.0, 1.66],
+  [0, 1.74, -0.44, 1.86, -0.66, 2.06],
+  [0, 1.74, 0.44, 1.86, 0.66, 2.06],
 ];
 
-/** Rounded-hexagon eye frame, authored around the origin. */
-const EYE: readonly (readonly [number, number])[] = [
-  [-0.3, 0],
-  [-0.19, -0.19],
-  [0.14, -0.22],
-  [0.31, -0.05],
-  [0.22, 0.17],
-  [-0.1, 0.2],
+/** Contour bands across the shell — the cross-weave of the lattice. */
+export const BANDS: readonly (readonly number[])[] = [
+  [-0.96, -1.16, 0, -1.52, 0.96, -1.16],
+  [-1.2, -0.72, 0, -1.08, 1.2, -0.72],
+  [-1.24, 1.02, 0, 0.72, 1.24, 1.02],
+  [-1.0, 1.66, 0, 1.24, 1.0, 1.66],
+  [-0.66, 2.06, 0, 1.74, 0.66, 2.06],
 ];
+
+/**
+ * The eye opening — a standing LEAF: rounded at the outer edge, gently pointed
+ * at the top.
+ *
+ * Deliberately not the reference's teardrop, which sweeps up from a sharp inner
+ * corner. That silhouette is the second half of what makes the character
+ * recognisable, and it is as much the design as the web is.
+ *
+ * Authored around the origin, mirrored per side. Large — roughly a third of the
+ * face width — because the drama in a hero mask lives in the eyes.
+ */
+export const EYE: readonly (readonly [number, number])[] = [
+  [-0.04, -0.34],
+  [0.3, -0.26],
+  [0.52, 0.02],
+  [0.44, 0.34],
+  [0.12, 0.44],
+  [-0.16, 0.26],
+  [-0.2, -0.06],
+];
+
+/**
+ * ── OPTIONAL DROP-IN ARTWORK ─────────────────────────────────────────────
+ * If original mask art exists, it is used instead of the procedural design.
+ * Drawn artwork will always beat anything generated from polygons, so the code
+ * should not stand in the way of it.
+ *
+ * THE CONTRACT the artwork must meet, so it lands on the face correctly:
+ *   · square canvas
+ *   · face centred horizontally
+ *   · the EYE LINE at 42% of the height
+ *   · interocular distance = 26% of the width
+ *   · transparent where the eyes and the background are
+ *
+ * Drop `public/mask/red.png` and `public/mask/white.png` (or `.svg`) and call
+ * `loadMaskArt()` once. Anything that fails to load falls back silently — a
+ * missing file must never cost the mask.
+ *
+ * Same-origin only. `img-src 'self'` is what keeps that structural.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+const ART_EYE_LINE = 0.42;
+const ART_INTEROCULAR = 0.26;
+
+const art: Partial<Record<MaskVariant, HTMLImageElement>> = {};
+
+export function loadMaskArt(variant: MaskVariant, src: string): void {
+  if (typeof Image === 'undefined') return;
+  const image = new Image();
+  image.decoding = 'async';
+  image.onload = () => {
+    art[variant] = image;
+  };
+  // No handler on error, deliberately: the procedural mask is already the
+  // fallback, and a 404 here is a content gap, not a failure the user should
+  // ever learn about.
+  image.src = src;
+}
 
 /**
  * Draws one mask.
@@ -173,76 +265,111 @@ export function drawMask(
 ): void {
   if (!frame.valid || reveal <= 0.01 || frame.unit <= 0) return;
 
-  const palette = PALETTE[variant];
   const alpha = Math.min(1, reveal);
+  // Settles from 0.86 to 1.0 as it reveals, plus the success pulse.
+  const grow = 0.86 + reveal * 0.14 + pulse * 0.06;
 
   ctx.save();
   ctx.translate(frame.centreX, frame.centreY);
   ctx.rotate(frame.rollRad);
-  // Settles from 0.86 to 1.0 as it reveals, plus the success pulse.
-  ctx.scale(
-    frame.unit * (0.86 + reveal * 0.14 + pulse * 0.06),
-    frame.unit * (0.86 + reveal * 0.14 + pulse * 0.06),
-  );
 
+  const image = art[variant];
+  if (image !== undefined && image.complete && image.naturalWidth > 0) {
+    drawArt(ctx, image, frame.unit * grow, alpha);
+    ctx.restore();
+    return;
+  }
+
+  ctx.scale(frame.unit * grow, frame.unit * grow);
+  drawProcedural(ctx, PALETTE[variant], alpha, glow, pulse);
+  ctx.restore();
+}
+
+function drawArt(
+  ctx: CanvasRenderingContext2D,
+  image: HTMLImageElement,
+  unit: number,
+  alpha: number,
+): void {
+  const width = unit / ART_INTEROCULAR;
+  const height = width * (image.naturalHeight / image.naturalWidth);
+  ctx.globalAlpha = alpha;
+  ctx.drawImage(image, -width / 2, -height * ART_EYE_LINE, width, height);
+  ctx.globalAlpha = 1;
+}
+
+function drawProcedural(
+  ctx: CanvasRenderingContext2D,
+  palette: Palette,
+  alpha: number,
+  glow: number,
+  pulse: number,
+): void {
   ctx.lineJoin = 'round';
   ctx.lineCap = 'round';
 
   // ── Shell ──────────────────────────────────────────────────────────────
-  // Two passes at different alphas give the body a soft edge without a blur.
   tracePolygon(ctx, SHELL);
-  ctx.globalAlpha = alpha * (0.22 + glow * 0.16);
+  ctx.globalAlpha = alpha * (0.3 + glow * 0.18);
   ctx.fillStyle = palette.shell;
   ctx.fill();
 
-  ctx.globalAlpha = alpha * 0.9;
+  // The bold outline is what gives the silhouette its weight — the single
+  // biggest thing the earlier brow-band design was missing.
+  ctx.globalAlpha = alpha * 0.95;
   ctx.strokeStyle = palette.line;
-  ctx.lineWidth = 0.055;
+  ctx.lineWidth = 0.085;
   ctx.stroke();
 
-  // ── Facets ─────────────────────────────────────────────────────────────
-  ctx.globalAlpha = alpha * (0.45 + glow * 0.35);
-  ctx.strokeStyle = palette.shell;
-  ctx.lineWidth = 0.032;
+  // ── Lattice ────────────────────────────────────────────────────────────
+  ctx.globalAlpha = alpha * (0.6 + glow * 0.3);
+  ctx.strokeStyle = palette.line;
+  ctx.lineWidth = 0.038;
   ctx.beginPath();
-  for (const [x1, y1, x2, y2] of FACETS) {
-    ctx.moveTo(x1, y1);
-    ctx.lineTo(x2, y2);
+  for (const [x1, y1, cx, cy, x2, y2] of [...VEINS, ...BANDS]) {
+    ctx.moveTo(x1 ?? 0, y1 ?? 0);
+    ctx.quadraticCurveTo(cx ?? 0, cy ?? 0, x2 ?? 0, y2 ?? 0);
   }
   ctx.stroke();
 
-  // ── Brow chevron ───────────────────────────────────────────────────────
-  ctx.globalAlpha = alpha * 0.85;
-  ctx.strokeStyle = palette.line;
-  ctx.lineWidth = 0.05;
-  ctx.beginPath();
-  ctx.moveTo(-0.86, -0.42);
-  ctx.quadraticCurveTo(0, -0.2, 0.86, -0.42);
+  // A lighter pass in the variant colour sits the lattice into the shell
+  // instead of leaving it as black lines floating on top.
+  ctx.globalAlpha = alpha * (0.3 + glow * 0.3);
+  ctx.strokeStyle = palette.shell;
+  ctx.lineWidth = 0.016;
   ctx.stroke();
 
-  // ── Eye frames ─────────────────────────────────────────────────────────
-  // The fill is deliberately faint: the brief requires the eyes stay VISIBLE,
-  // so this frames them rather than covering them.
+  // ── Eyes ───────────────────────────────────────────────────────────────
+  // Large, thick-rimmed, and CLEAR inside: the brief requires the eyes stay
+  // visible, and it is also where a hero mask carries its expression.
   for (const side of [-1, 1]) {
     ctx.save();
-    ctx.translate(side * 0.5, 0.02);
+    ctx.translate(side * 0.62, 0.04);
     ctx.scale(side, 1);
 
     tracePolygon(ctx, EYE);
-    ctx.globalAlpha = alpha * (0.2 + glow * 0.25);
+
+    // Glow: a wide, low-alpha stroke. Cheaper than `shadowBlur`, which forces a
+    // full-canvas readback on mobile Safari.
+    ctx.globalAlpha = alpha * (0.28 + glow * 0.5 + pulse * 0.22);
+    ctx.strokeStyle = palette.eye;
+    ctx.lineWidth = 0.26 + glow * 0.08;
+    ctx.stroke();
+
+    ctx.globalAlpha = alpha * (0.16 + glow * 0.2);
     ctx.fillStyle = palette.eye;
     ctx.fill();
 
-    // The glow is a second, larger stroke at low alpha — cheaper than
-    // `shadowBlur`, and it survives on a mid-range Android.
-    ctx.globalAlpha = alpha * (0.3 + glow * 0.5 + pulse * 0.2);
-    ctx.strokeStyle = palette.eye;
-    ctx.lineWidth = 0.1 + glow * 0.05;
+    // The heavy rim.
+    ctx.globalAlpha = alpha * 0.95;
+    ctx.strokeStyle = palette.line;
+    ctx.lineWidth = 0.075;
     ctx.stroke();
 
+    // The bright inner lip that makes the eye read as lit.
     ctx.globalAlpha = alpha;
     ctx.strokeStyle = palette.eyeCore;
-    ctx.lineWidth = 0.038;
+    ctx.lineWidth = 0.03;
     ctx.stroke();
 
     ctx.restore();
@@ -255,12 +382,11 @@ export function drawMask(
   ctx.fillStyle = '#FF8FAB';
   for (const side of [-1, 1]) {
     ctx.beginPath();
-    ctx.ellipse(side * 0.95, 0.46, 0.2, 0.12, 0, 0, Math.PI * 2);
+    ctx.ellipse(side * 1.02, 0.76, 0.24, 0.14, 0, 0, Math.PI * 2);
     ctx.fill();
   }
 
   ctx.globalAlpha = 1;
-  ctx.restore();
 }
 
 function tracePolygon(

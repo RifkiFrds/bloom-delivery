@@ -16,7 +16,15 @@ import {
   snap,
   springConstants,
 } from '@/components/tracking/spring';
-import { maskFrame, orderByScreenPosition, variantFor } from '@/components/tracking/mask';
+import {
+  BANDS,
+  EYE,
+  maskFrame,
+  orderByScreenPosition,
+  SHELL,
+  variantFor,
+  VEINS,
+} from '@/components/tracking/mask';
 import { spring } from '@/motion/tokens';
 import type { FaceBox, Point } from '@/detection/types';
 
@@ -231,5 +239,65 @@ describe('variant assignment — Part 2', () => {
   it('orders a single face without complaint', () => {
     expect(orderByScreenPosition([face(LEVEL)])).toEqual([0]);
     expect(orderByScreenPosition([])).toEqual([]);
+  });
+});
+
+describe('the mask is an original design, not the reference', () => {
+  /**
+   * The reference images supplied were the Marvel Spider-Man mask. Two things
+   * make that design recognisable and protected: a RADIAL WEB converging on a
+   * single point, and the swept TEARDROP eye with a sharp inner corner.
+   *
+   * These assertions pin the geometry away from both. They are unusual tests —
+   * they encode a design constraint rather than a behaviour — but this is the
+   * one property of the file that a future "make it look more like the
+   * reference" edit would quietly destroy.
+   */
+  it('the lattice has no single convergence point', () => {
+    // Every vein and band is a quadratic with distinct endpoints; a web would
+    // show many segments sharing one coordinate. Count endpoint collisions.
+    const endpoints = new Map<string, number>();
+    for (const curve of [...VEINS, ...BANDS]) {
+      for (const [x, y] of [
+        [curve[0], curve[1]],
+        [curve[4], curve[5]],
+      ]) {
+        const key = `${String(x)},${String(y)}`;
+        endpoints.set(key, (endpoints.get(key) ?? 0) + 1);
+      }
+    }
+
+    const busiest = Math.max(...endpoints.values());
+    // A radial web would have every spoke meeting at the centre. The stem of a
+    // leaf structure has branches leaving it at DIFFERENT heights.
+    expect(busiest).toBeLessThanOrEqual(2);
+  });
+
+  it('the eye opening is not a swept teardrop', () => {
+    // A teardrop has one vertex far sharper than the rest. A leaf shape spreads
+    // its curvature. Compare the tightest interior angle against the mean.
+    const angles: number[] = [];
+    for (let i = 0; i < EYE.length; i += 1) {
+      const previous = EYE[(i - 1 + EYE.length) % EYE.length];
+      const current = EYE[i];
+      const next = EYE[(i + 1) % EYE.length];
+      if (previous === undefined || current === undefined || next === undefined) continue;
+
+      const a = Math.atan2(previous[1] - current[1], previous[0] - current[0]);
+      const b = Math.atan2(next[1] - current[1], next[0] - current[0]);
+      let angle = Math.abs(a - b);
+      if (angle > Math.PI) angle = Math.PI * 2 - angle;
+      angles.push(angle);
+    }
+
+    const tightest = Math.min(...angles);
+    // Nothing below ~50°: no sharp point anywhere on the outline.
+    expect(tightest).toBeGreaterThan(0.85);
+  });
+
+  it('the shell is a full face, which is where the silhouette comes from', () => {
+    const ys = SHELL.map(([, y]) => y);
+    expect(Math.min(...ys)).toBeLessThan(-1.5); // above the brow
+    expect(Math.max(...ys)).toBeGreaterThan(2); // past the chin
   });
 });

@@ -36,7 +36,13 @@ import type { DetectionSnapshot } from '@/detection/ref';
 import type { Hand } from '@/detection/types';
 import { drawHands, HAND_POINTS, HAND_SLOTS } from './tracking/hands';
 import { drawHeartGuide, HEART_UNIT } from './tracking/heart';
-import { drawMask, maskFrame, orderByScreenPosition, variantFor } from './tracking/mask';
+import {
+  drawMask,
+  loadMaskArt,
+  maskFrame,
+  orderByScreenPosition,
+  variantFor,
+} from './tracking/mask';
 import { drawSparkles, seedSparkles, SPARKLE_COUNT } from './tracking/sparkles';
 import { integrate, integrateScalar, snap, springConstants } from './tracking/spring';
 import { useDetectionFrame } from './useDetectionFrame';
@@ -82,6 +88,14 @@ export function TrackingOverlay({
   const burst = useRef(false);
 
   const lastFrameAt = useRef(0);
+
+  // Optional drop-in artwork. Absent by default, and absent is fine — the
+  // procedural mask is the fallback, not an error path. See `tracking/mask.ts`
+  // for the contract the files must meet.
+  useEffect(() => {
+    loadMaskArt('red', '/mask/red.png');
+    loadMaskArt('white', '/mask/white.png');
+  }, []);
 
   useEffect(() => {
     const canvas = canvasRef.current;
