@@ -210,6 +210,23 @@ body {
 }
 
 /**
+ * The camera preview — Doc 03 §2.2, Doc 04 §B.5.
+ *
+ * ALWAYS mirrored. Inference runs on the raw, unmirrored frame; the overlay
+ * canvas applies the SAME transform. Both live in one place so they cannot
+ * drift apart — a mismatch between them is the classic overlay bug.
+ *
+ * The element is created by `CameraRuntime`, not by JSX, so its styling is a
+ * stylesheet rule rather than utility classes on a component.
+ */
+.camera-preview {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transform: scaleX(-1);
+}
+
+/**
  * The realtime status pill — Doc 04 §A.6.
  *
  * Opaque at every state, because it sits over live video and text over video

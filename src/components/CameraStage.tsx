@@ -58,15 +58,17 @@ export function CameraStage({
   children,
   dim = 0,
 }: CameraStageProps): React.ReactElement {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const hostRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    cameraRuntime.bindVideo(videoRef.current);
-    return () => {
-      // Do NOT stop the stream here: unmounting the stage happens on every
-      // scene swap, and the teardown belongs exclusively to UNLOCKING.
-      cameraRuntime.bindVideo(null);
-    };
+    // The `<video>` is created and owned by the camera runtime, and MOVED into
+    // this host. It is not JSX, because every Phase A scene mounts its own
+    // `CameraStage` and a JSX element would be replaced on each transition —
+    // which is exactly how the preview went blank after `LOADING_DETECTION`.
+    //
+    // There is no cleanup: the element outlives this component on purpose, and
+    // the teardown belongs exclusively to `UNLOCKING`.
+    cameraRuntime.mountVideo(hostRef.current);
   }, []);
 
   return (
@@ -80,14 +82,8 @@ export function CameraStage({
     <div className="flex min-h-[100dvh] w-full flex-col items-center px-3 pt-[max(0.75rem,env(safe-area-inset-top))] pb-[max(0.75rem,env(safe-area-inset-bottom))]">
       <div className="flex w-full max-w-[660px] flex-1 flex-col gap-3">
         <div className="relative mt-14 min-h-[46dvh] w-full flex-1 overflow-hidden rounded-[40px] border-3 border-ink bg-cream shadow-[8px_8px_0_#111111]">
-          <video
-            ref={videoRef}
-            aria-hidden="true"
-            playsInline
-            muted
-            autoPlay
-            className="h-full w-full scale-x-[-1] object-cover"
-          />
+          {/* The runtime's persistent <video> is appended here. */}
+          <div ref={hostRef} className="absolute inset-0" />
 
           {/* Same mirror as the video. One transform, applied twice, on purpose. */}
           {overlay !== undefined && (

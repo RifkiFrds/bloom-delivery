@@ -37,10 +37,19 @@ function trackConsoleErrors(page: Page): string[] {
   return errors;
 }
 
-/** Jumps the machine to a state through the debug panel (dev builds only). */
+/**
+ * Jumps the machine to a state through the debug panel (dev builds only).
+ *
+ * The panel toggle is a TOGGLE, so this opens it only when the jump controls
+ * are not already on screen — a second call would otherwise close the panel and
+ * then wait forever for a button it had just hidden.
+ */
 async function jumpTo(page: Page, state: string): Promise<void> {
-  await page.getByRole('button', { name: /^debug ·/ }).click();
-  await page.getByRole('button', { name: state, exact: true }).click();
+  const target = page.getByRole('button', { name: state, exact: true });
+  if (!(await target.isVisible())) {
+    await page.getByRole('button', { name: /^debug ·/ }).click();
+  }
+  await target.click();
 }
 
 test.describe('the root path is neutral', () => {
@@ -80,9 +89,60 @@ test.describe('the happy path', () => {
     await page.getByRole('button', { name: "I'm ready" }).click({ force: true });
 
     // The camera stage mounts once the fake stream is granted.
-    await expect(page.locator('video')).toBeVisible({ timeout: 15_000 });
+    const video = page.locator('video');
+    await expect(video).toBeVisible({ timeout: 15_000 });
+
+    // ★ REGRESSION ★ — the preview must carry an actual stream, not just exist.
+    // Every Phase A scene mounts its own CameraStage, and the element used to
+    // be JSX: the stream attached once, to the FIRST one, so from
+    // SEEKING_FACES onward the preview was a blank rectangle. `toBeVisible`
+    // passed the whole time, which is why nothing caught it.
+    await expect
+      .poll(
+        async () =>
+          video.evaluate(
+            (element: HTMLVideoElement) =>
+              element.srcObject !== null && element.videoWidth > 0,
+          ),
+        { timeout: 15_000 },
+      )
+      .toBe(true);
 
     expect(errors, `console errors: ${errors.join(' | ')}`).toHaveLength(0);
+  });
+
+  /**
+   * The element must SURVIVE the scene change, not be replaced by it. Compared
+   * by identity: a re-created element would be a different node even though the
+   * selector still matches one.
+   */
+  test('the same <video> element survives every Phase A scene change', async ({
+    page,
+    context,
+  }) => {
+    await context.grantPermissions(['camera']);
+    await page.goto(EXPERIENCE);
+
+    await page.getByRole('button', { name: 'Start' }).click({ force: true });
+    await page.getByRole('button', { name: "I'm ready" }).click({ force: true });
+    await expect(page.locator('video')).toBeVisible({ timeout: 15_000 });
+
+    // Tag the live element, then walk forward through the camera-bearing states.
+    await page.locator('video').evaluate((element) => {
+      element.dataset.identity = 'original';
+    });
+
+    for (const state of ['SEEKING_FACES', 'TOGETHER_CONFIRMED', 'SEEKING_GESTURE']) {
+      await jumpTo(page, state);
+      await expect(page.locator('video')).toHaveAttribute('data-identity', 'original');
+      await expect
+        .poll(async () =>
+          page
+            .locator('video')
+            .evaluate((element: HTMLVideoElement) => element.srcObject !== null),
+        )
+        .toBe(true);
+    }
   });
 
   test('the motion toggle is a real radio group', async ({ page }) => {

@@ -119,10 +119,11 @@ export function registerEffectHandlers(): void {
   effectRunner.register('camera.acquire', () => {
     cameraRuntime.acquire();
   });
-  // Attachment is driven by whichever of the stream and the <video> element
-  // arrives last, so this effect only has to nudge the runtime.
+  // The runtime owns the <video> element and attaches at whichever of the
+  // stream and the host container arrives last, so this effect only has to
+  // record that the machine reached the point where a preview is expected.
   effectRunner.register('camera.attach', () => {
-    cameraRuntime.bindVideo(cameraRuntime.currentVideo());
+    record('camera: preview requested');
   });
   // The 120 s cap is armed inside `bindLifecycle` at acquisition, because it is
   // an absolute camera-on budget rather than a per-stage one.

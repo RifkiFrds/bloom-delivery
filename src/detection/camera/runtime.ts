@@ -10,9 +10,12 @@
  * stage mounts a state later, on `LOADING_DETECTION`.
  *
  * So acquisition and attachment are split. `acquire()` runs inside the gesture
- * and holds the stream; `bindVideo()` is called by the camera stage when it
+ * and holds the stream; `mountVideo()` is called by the camera stage when it
  * mounts, and attachment happens at whichever of the two arrives last. Neither
  * has to know about the other's timing.
+ *
+ * The `<video>` element itself is created and owned HERE, not in JSX — see
+ * `ensureVideo()` for why that is load-bearing rather than a preference.
  * ─────────────────────────────────────────────────────────────────────────
  */
 
@@ -129,15 +132,69 @@ export class CameraRuntime {
     return this.stream !== null;
   }
 
-  /** Called by the camera stage on mount. Attaches immediately if ready. */
-  bindVideo(element: HTMLVideoElement | null): void {
+  /**
+   * ★ THE ONE `<video>` FOR THE WHOLE SESSION ★
+   *
+   * ── WHY THE RUNTIME OWNS THIS ELEMENT AND REACT DOES NOT ────────────────
+   * Every Phase A scene renders its own `<CameraStage>`, and React unmounts one
+   * and mounts the next on each transition. When the element was JSX, that
+   * produced a BRAND-NEW `<video>` at `LOADING_DETECTION`, `SEEKING_FACES`,
+   * `TOGETHER_CONFIRMED` and `SEEKING_GESTURE`.
+   *
+   * The stream, meanwhile, is attached exactly once — so from `SEEKING_FACES`
+   * onward the preview was a blank cream rectangle with the reticles floating
+   * on nothing. The user saw themselves during "Warming up the magic" and then
+   * vanished.
+   *
+   * Re-attaching per element would fix the blank frame but not the rest: each
+   * re-attach restarts playback, which is a black frame and a stall on every
+   * scene change, and `detectForVideo` reading an element with no decoded data
+   * yet drops the face count at exactly the moment the latch is trying to close.
+   *
+   * So there is ONE element, created once, moved between hosts. Doc 01 §5.1
+   * still holds — the preview surface is a DOM `<video>`; it is simply owned by
+   * the singleton that owns the stream, which is the same lifetime.
+   * ─────────────────────────────────────────────────────────────────────────
+   */
+  private ensureVideo(): HTMLVideoElement | null {
+    if (typeof document === 'undefined') return null;
+    if (this.video !== null) return this.video;
+
+    const element = document.createElement('video');
+    // All three are required. Without `playsinline`, iOS Safari takes the video
+    // fullscreen and the entire UI disappears (Doc 04 §B.5).
+    element.playsInline = true;
+    element.muted = true;
+    element.autoplay = true;
+    element.setAttribute('aria-hidden', 'true');
+    // Styled by class rather than inline so the mirror lives in one stylesheet
+    // rule alongside the overlay's, where a mismatch is visible.
+    element.className = 'camera-preview';
     this.video = element;
-    if (element !== null) void this.attachIfPossible();
+    return element;
+  }
+
+  /**
+   * Moves the persistent element into the scene's host container. Called by the
+   * camera stage on mount; the element survives the unmount.
+   */
+  mountVideo(host: HTMLElement | null): void {
+    if (host === null || this.torndown) return;
+    const element = this.ensureVideo();
+    if (element === null) return;
+
+    if (element.parentElement !== host) host.appendChild(element);
+    // A detached element pauses; re-appending must resume it or the preview
+    // freezes on the last frame of the previous scene.
+    if (element.paused && element.srcObject !== null) void element.play();
+
+    void this.attachIfPossible();
   }
 
   private async attachIfPossible(): Promise<void> {
     if (this.attached || this.torndown) return;
-    const { stream, video } = this;
+    const stream = this.stream;
+    const video = this.ensureVideo();
     if (stream === null || video === null) return;
 
     this.attached = true;
@@ -209,6 +266,7 @@ export class CameraRuntime {
     return this.capped;
   }
 
+  /** The element MediaPipe reads from. Stable for the whole session. */
   currentVideo(): HTMLVideoElement | null {
     return this.video;
   }
