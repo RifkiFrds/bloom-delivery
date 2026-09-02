@@ -112,3 +112,75 @@ test.describe('the kept moment', () => {
     await expect(page.locator('figure')).toHaveCount(0);
   });
 });
+
+test.describe('the unlock beat', () => {
+  /**
+   * The burst is a canvas behind the stamp. It must PAINT, not merely exist —
+   * a component that mounts and draws nothing looks identical to a working one
+   * in any `toBeVisible` assertion.
+   */
+  test('draws the burst behind the stamp', async ({ page }) => {
+    const errors = trackErrors(page);
+    await page.goto(EXPERIENCE);
+    await jumpTo(page, 'UNLOCKING');
+
+    await expect(page.getByRole('heading', { name: 'DELIVERY UNLOCKED' })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // Any non-transparent pixel means the canvas is being drawn into.
+    await expect
+      .poll(
+        async () =>
+          page
+            .locator('canvas')
+            .first()
+            .evaluate((element: HTMLCanvasElement) => {
+              const ctx = element.getContext('2d');
+              if (ctx === null || element.width === 0) return false;
+              const { data } = ctx.getImageData(0, 0, element.width, element.height);
+              for (let i = 3; i < data.length; i += 4 * 97) {
+                if ((data[i] ?? 0) > 0) return true;
+              }
+              return false;
+            }),
+        { timeout: 10_000 },
+      )
+      .toBe(true);
+
+    expect(errors, `console errors: ${errors.join(' | ')}`).toHaveLength(0);
+  });
+
+  /**
+   * Doc 04 §C.6 is a SAFETY rule. Under reduced motion the shake and the radial
+   * bloom are removed ENTIRELY — not softened — and the burst settles straight
+   * to its end state.
+   */
+  test('reduced motion removes the shake and the bloom', async ({ browser }) => {
+    // `reducedMotion` is a direct `newContext` option. Nesting it under
+    // `contextOptions` — which is the shape the config file's `use` block
+    // takes — is accepted silently and does nothing, so the test ran at full
+    // motion and found the bloom it was asserting was absent.
+    const context = await browser.newContext({ reducedMotion: 'reduce' });
+    const page = await context.newPage();
+
+    await page.goto(EXPERIENCE);
+    await jumpTo(page, 'UNLOCKING');
+    await expect(page.getByRole('heading', { name: 'DELIVERY UNLOCKED' })).toBeVisible({
+      timeout: 10_000,
+    });
+
+    // The bloom layer is rendered only when `motionSafe` is true.
+    const bloomLayers = await page
+      .locator('div')
+      .evaluateAll(
+        (nodes) =>
+          nodes.filter((node) =>
+            getComputedStyle(node).backgroundImage.includes('radial-gradient'),
+          ).length,
+      );
+    expect(bloomLayers).toBe(0);
+
+    await context.close();
+  });
+});
