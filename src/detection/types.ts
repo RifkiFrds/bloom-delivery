@@ -22,7 +22,32 @@ export interface FaceBox {
   readonly width: number;
   readonly height: number;
   readonly score: number;
+  /**
+   * BlazeFace's six keypoints, square-corrected:
+   * `[rightEye, leftEye, noseTip, mouth, rightEar, leftEar]`.
+   *
+   * ── THESE WERE ALREADY BEING COMPUTED AND THROWN AWAY ──────────────────
+   * Doc 03 §3.1 rejects `FaceLandmarker` (478 points) as "many times the cost
+   * for information nothing here uses". That still holds — this is the SAME
+   * detector, and these six points arrive in the same result object at no extra
+   * inference cost. Reading them changes no threshold and no decision:
+   * `faceValid` still tests score and box width alone.
+   *
+   * Empty when the model returns no keypoints, so every consumer must handle
+   * the absence rather than assume six.
+   */
+  readonly keypoints: readonly Point[];
 }
+
+/** Indices into `FaceBox.keypoints`. */
+export const FK = {
+  RIGHT_EYE: 0,
+  LEFT_EYE: 1,
+  NOSE: 2,
+  MOUTH: 3,
+  RIGHT_EAR: 4,
+  LEFT_EAR: 5,
+} as const;
 
 /** MediaPipe canonical hand landmark indices (Doc 03 §2.3). */
 export const L = {

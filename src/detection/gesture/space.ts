@@ -71,3 +71,21 @@ export function correctFaceBox(
     height: box.height * scale * factor,
   };
 }
+
+/**
+ * Square-corrects a face keypoint.
+ *
+ * ── NOTE THE ASYMMETRY WITH THE BOX ──────────────────────────────────────
+ * MediaPipe reports the face bounding box in PIXELS but the keypoints already
+ * NORMALIZED. So the box is divided by the video width and these are not — only
+ * the aspect factor applies. Treating them alike puts the eyes somewhere off in
+ * the corner, which is the kind of bug that looks like a broken overlay rather
+ * than a units mistake.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+export function correctKeypoint(
+  keypoint: RawLandmark,
+  factor: number,
+): { x: number; y: number } {
+  return { x: keypoint.x, y: keypoint.y * factor };
+}

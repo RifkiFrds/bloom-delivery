@@ -30,7 +30,7 @@ import { DetectionStatusCard } from '@/components/DetectionStatusCard';
 import { EscapeHatch } from '@/components/EscapeHatch';
 import { FrameProgressRing } from '@/components/FrameProgressRing';
 import { GestureDiagram } from '@/components/GestureDiagram';
-import { HandOverlay } from '@/components/HandOverlay';
+import { TrackingOverlay } from '@/components/TrackingOverlay';
 import { MERCY_COPY } from '@/content/copy';
 import { detectionRuntime } from '@/detection/runtime';
 import { selectContext, selectMotionSafe, useMachineStore } from '@/store/machineStore';
@@ -69,7 +69,7 @@ export function SeekingGesture(): React.ReactElement {
         // Mirrored with the video: the landmarks must sit on the hands, and the
         // diagram's left hand must be on the user's left as they see themselves.
         <>
-          <HandOverlay motionSafe={motionSafe} />
+          <TrackingOverlay motionSafe={motionSafe} />
           <div className="flex h-full w-full items-end justify-center pb-4 opacity-80">
             <GestureDiagram motionSafe={motionSafe} />
           </div>

@@ -27,7 +27,7 @@ import { CameraStage } from '@/components/CameraStage';
 import { CoachingHUD } from '@/components/CoachingHUD';
 import { EscapeHatch } from '@/components/EscapeHatch';
 import { FramingGuide, PersonChips } from '@/components/FramingGuide';
-import { HandOverlay } from '@/components/HandOverlay';
+import { TrackingOverlay } from '@/components/TrackingOverlay';
 import { selectMotionSafe, useMachineStore } from '@/store/machineStore';
 import { SEEKING_FACES } from '@/content/copy';
 
@@ -40,12 +40,12 @@ export function SeekingFaces(): React.ReactElement {
         <>
           <FramingGuide />
           {/*
-            The hand model is usually not loaded yet, so this draws nothing —
-            but when it IS ready early, hands light up before the gesture stage
-            begins, which is the clearest possible signal that the camera is
-            seeing the user.
+            The masks are the point of THIS stage: they are the proof that the
+            camera has found both people, which is what `SEEKING_FACES` is
+            asking them to prove. Hands usually draw nothing here — the hand
+            model is still downloading — but light up if it lands early.
           */}
-          <HandOverlay motionSafe={motionSafe} />
+          <TrackingOverlay motionSafe={motionSafe} />
         </>
       }
       hud={

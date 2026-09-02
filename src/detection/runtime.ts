@@ -31,10 +31,15 @@ import { HoldTimer } from './gesture/hold';
 import { palmScale } from './gesture/metrics';
 import { RingBuffer } from './gesture/nofm';
 import { selectGesture } from './gesture/select';
-import { aspectFactor, correctFaceBox, correctHand } from './gesture/space';
+import {
+  aspectFactor,
+  correctFaceBox,
+  correctHand,
+  correctKeypoint,
+} from './gesture/space';
 import { LumaSampler } from './luma';
 import { detectionRef, resetDetectionRef } from './ref';
-import type { DetectionMode, FaceBox, Hand } from './types';
+import type { DetectionMode, FaceBox, Hand, Point } from './types';
 import {
   createFaceDetector,
   createHandLandmarker,
@@ -250,7 +255,18 @@ export class DetectionRuntime {
       const box = detection.boundingBox;
       if (box === undefined) continue;
       const corrected = correctFaceBox(box, video.videoWidth, factor);
-      boxes.push({ ...corrected, score: detection.categories[0]?.score ?? 0 });
+
+      // Carried for the mask overlay only. No gate reads them.
+      const keypoints: Point[] = [];
+      for (const keypoint of detection.keypoints) {
+        keypoints.push(correctKeypoint(keypoint, factor));
+      }
+
+      boxes.push({
+        ...corrected,
+        score: detection.categories[0]?.score ?? 0,
+        keypoints,
+      });
     }
     return boxes;
   }
