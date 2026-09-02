@@ -16,14 +16,7 @@
  */
 
 import { G1 as T, HYSTERESIS } from './config';
-import {
-  allCurled,
-  angleBetweenDeg,
-  dist,
-  midY,
-  palmDir,
-  palmScale,
-} from './metrics';
+import { allCurled, angleBetweenDeg, dist, midY, palmDir, palmScale } from './metrics';
 import { L, type Condition, type Hand, type VariantResult } from './types';
 
 export interface G1Input {

@@ -2,7 +2,10 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <meta name="robots" content="noindex, nofollow" />
     <title>Bloom Delivery — Phase 0 Spike</title>
     <style>
@@ -13,15 +16,23 @@
         --pink: #ff8fab;
         --yellow: #ffe599;
       }
-      * { box-sizing: border-box; }
+      * {
+        box-sizing: border-box;
+      }
       body {
         margin: 0;
         padding: 12px;
         background: var(--cream);
         color: var(--ink);
-        font: 400 14px/1.5 ui-sans-serif, system-ui, sans-serif;
+        font:
+          400 14px/1.5 ui-sans-serif,
+          system-ui,
+          sans-serif;
       }
-      h1 { font-size: 16px; margin: 0 0 4px; }
+      h1 {
+        font-size: 16px;
+        margin: 0 0 4px;
+      }
       .warn {
         border: 3px solid var(--ink);
         background: var(--yellow);
@@ -31,29 +42,101 @@
         margin: 0 0 12px;
         font-size: 12px;
       }
-      .layout { display: grid; gap: 12px; grid-template-columns: 1fr; }
-      @media (min-width: 1100px) { .layout { grid-template-columns: minmax(0, 1fr) 460px; } }
-      .stage { position: relative; border: 3px solid var(--ink); border-radius: 20px; overflow: hidden; background: #000; }
-      video, #overlay { display: block; width: 100%; }
-      video { transform: scaleX(-1); }
-      #overlay { position: absolute; inset: 0; pointer-events: none; }
-      .panel { display: flex; flex-direction: column; gap: 8px; }
-      .controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
-      button, input, select {
-        font: inherit; font-size: 13px; padding: 8px 12px;
-        border: 3px solid var(--ink); border-radius: 12px; background: #fff; color: var(--ink);
+      .layout {
+        display: grid;
+        gap: 12px;
+        grid-template-columns: 1fr;
       }
-      button { background: var(--pink); box-shadow: 3px 3px 0 var(--ink); cursor: pointer; }
-      button:disabled { opacity: 0.5; box-shadow: none; cursor: not-allowed; }
-      #status { font-size: 12px; padding: 6px 10px; border: 3px solid var(--ink); border-radius: 12px; background: #fff; }
+      @media (min-width: 1100px) {
+        .layout {
+          grid-template-columns: minmax(0, 1fr) 460px;
+        }
+      }
+      .stage {
+        position: relative;
+        border: 3px solid var(--ink);
+        border-radius: 20px;
+        overflow: hidden;
+        background: #000;
+      }
+      video,
+      #overlay {
+        display: block;
+        width: 100%;
+      }
+      video {
+        transform: scaleX(-1);
+      }
+      #overlay {
+        position: absolute;
+        inset: 0;
+        pointer-events: none;
+      }
+      .panel {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .controls {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        align-items: center;
+      }
+      button,
+      input,
+      select {
+        font: inherit;
+        font-size: 13px;
+        padding: 8px 12px;
+        border: 3px solid var(--ink);
+        border-radius: 12px;
+        background: #fff;
+        color: var(--ink);
+      }
+      button {
+        background: var(--pink);
+        box-shadow: 3px 3px 0 var(--ink);
+        cursor: pointer;
+      }
+      button:disabled {
+        opacity: 0.5;
+        box-shadow: none;
+        cursor: not-allowed;
+      }
+      #status {
+        font-size: 12px;
+        padding: 6px 10px;
+        border: 3px solid var(--ink);
+        border-radius: 12px;
+        background: #fff;
+      }
       pre#hud {
-        margin: 0; padding: 12px; min-height: 420px;
-        border: 3px solid var(--ink); border-radius: 12px; background: #fff;
-        font: 400 11px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace;
-        white-space: pre; overflow: auto;
+        margin: 0;
+        padding: 12px;
+        min-height: 420px;
+        border: 3px solid var(--ink);
+        border-radius: 12px;
+        background: #fff;
+        font:
+          400 11px/1.45 ui-monospace,
+          SFMono-Regular,
+          Menlo,
+          monospace;
+        white-space: pre;
+        overflow: auto;
       }
-      kbd { border: 2px solid var(--ink); border-radius: 6px; padding: 0 4px; font-size: 11px; background: #fff; }
-      .keys { font-size: 11px; line-height: 1.9; }
+      kbd {
+        border: 2px solid var(--ink);
+        border-radius: 6px;
+        padding: 0 4px;
+        font-size: 11px;
+        background: #fff;
+      }
+      .keys {
+        font-size: 11px;
+        line-height: 1.9;
+      }
     </style>
   </head>
   <body>
@@ -95,7 +178,8 @@
         <div class="keys">
           <kbd>P</kbd> trial passed &nbsp; <kbd>F</kbd> trial failed &nbsp;
           <kbd>R</kbd> rejection correct &nbsp; <kbd>X</kbd> false positive<br />
-          <kbd>E</kbd> export landmark fixture &nbsp; <kbd>M</kbd> export measurement report
+          <kbd>E</kbd> export landmark fixture &nbsp; <kbd>M</kbd> export measurement
+          report
         </div>
       </div>
     </div>

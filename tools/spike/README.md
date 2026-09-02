@@ -43,33 +43,33 @@ Laptop and phone must be on the same network.
 
 ## The controls
 
-| Control | Purpose |
-|---|---|
-| **Start camera** | Acquires 720p, loads the face model (blocking), starts the 15 Hz loop, then loads the hand model in the background |
-| **Stop / teardown** | Cancels the loop **first**, then stops tracks and closes both tasks — the exact order Phase 5 will use. Watch the camera light go out. |
-| **device label** | Written into the exported report. Set it before measuring. |
-| **daylight / evening** | Tags every trial. TP rates are reported separately per lighting. |
-| **mercy** | `auto` follows the 20/45/90 s ladder. Force a level to test G2/G3 acceptance without waiting. |
-| **file picker** | Replays a recorded clip through the identical pipeline — repeatable tuning with no second person needed |
+| Control                | Purpose                                                                                                                                |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| **Start camera**       | Acquires 720p, loads the face model (blocking), starts the 15 Hz loop, then loads the hand model in the background                     |
+| **Stop / teardown**    | Cancels the loop **first**, then stops tracks and closes both tasks — the exact order Phase 5 will use. Watch the camera light go out. |
+| **device label**       | Written into the exported report. Set it before measuring.                                                                             |
+| **daylight / evening** | Tags every trial. TP rates are reported separately per lighting.                                                                       |
+| **mercy**              | `auto` follows the 20/45/90 s ladder. Force a level to test G2/G3 acceptance without waiting.                                          |
+| **file picker**        | Replays a recorded clip through the identical pipeline — repeatable tuning with no second person needed                                |
 
-| Key | Action |
-|---|---|
-| <kbd>P</kbd> | Trial **passed** — the heart was made and it unlocked |
-| <kbd>F</kbd> | Trial **failed** — the heart was made and it did not |
-| <kbd>R</kbd> | Rejection pose **correctly rejected** |
+| Key          | Action                                                                  |
+| ------------ | ----------------------------------------------------------------------- |
+| <kbd>P</kbd> | Trial **passed** — the heart was made and it unlocked                   |
+| <kbd>F</kbd> | Trial **failed** — the heart was made and it did not                    |
+| <kbd>R</kbd> | Rejection pose **correctly rejected**                                   |
 | <kbd>X</kbd> | Rejection pose **falsely accepted** ← the number that must stay at zero |
-| <kbd>E</kbd> | Export the last 300 ticks of landmarks as a fixture JSON |
-| <kbd>M</kbd> | Export the measurement report JSON |
+| <kbd>E</kbd> | Export the last 300 ticks of landmarks as a fixture JSON                |
+| <kbd>M</kbd> | Export the measurement report JSON                                      |
 
 ---
 
 ## The protocol
 
 Run this on **three devices**: the oldest iPhone you can borrow, a mid-range
-Android, and one flagship or desktop. Doc 05 §12: *a criterion measured in the
-simulator is not measured.*
+Android, and one flagship or desktop. Doc 05 §12: _a criterion measured in the
+simulator is not measured._
 
-### Step 1 — `S` at the real pose  (the gate)
+### Step 1 — `S` at the real pose (the gate)
 
 1. Set the device label. Set lighting to `daylight`.
 2. **Start camera.** Stand as two people naturally would: arm's length, portrait,
@@ -140,27 +140,27 @@ Record **15 clips**, 5–10 s each at 720p, using the phone's own camera app.
 Then for each clip: load it with the file picker, let it play through, and press
 <kbd>E</kbd> to dump the landmarks.
 
-| # | Clip | Expectation |
-|---|---|---|
-| 1 | Daylight, two-hand heart | `accept-G1` |
-| 2 | Evening light, two-hand heart | `accept-G1` |
-| 3 | Finger heart, one hand | `accept-G2-mercy1` |
-| 4 | Mirrored finger hearts | `accept-G3-mercy1` |
-| 5 | One person only | `no-latch` |
-| 6 | Three people | `latch` (`>= 2`, not `== 2`) |
-| 7 | A poster in frame with one person | `documents-accepted-risk` |
-| 8 | Clasped hands | `reject-C5` |
-| 9 | High five | `reject-C6` |
-| 10 | Open palms | `reject-C7` |
-| 11 | Hands too far | `reject-C1` |
-| 12 | Phone-holder pose, heart with the free hand | `accept-G1` |
-| 13 | Very dark room | `too-dark` |
-| 14 | Heart with one hand briefly leaving frame | `hold-decays-not-resets` |
-| 15 | OK sign | `documents-accepted-G2-false-positive` |
+| #   | Clip                                        | Expectation                            |
+| --- | ------------------------------------------- | -------------------------------------- |
+| 1   | Daylight, two-hand heart                    | `accept-G1`                            |
+| 2   | Evening light, two-hand heart               | `accept-G1`                            |
+| 3   | Finger heart, one hand                      | `accept-G2-mercy1`                     |
+| 4   | Mirrored finger hearts                      | `accept-G3-mercy1`                     |
+| 5   | One person only                             | `no-latch`                             |
+| 6   | Three people                                | `latch` (`>= 2`, not `== 2`)           |
+| 7   | A poster in frame with one person           | `documents-accepted-risk`              |
+| 8   | Clasped hands                               | `reject-C5`                            |
+| 9   | High five                                   | `reject-C6`                            |
+| 10  | Open palms                                  | `reject-C7`                            |
+| 11  | Hands too far                               | `reject-C1`                            |
+| 12  | Phone-holder pose, heart with the free hand | `accept-G1`                            |
+| 13  | Very dark room                              | `too-dark`                             |
+| 14  | Heart with one hand briefly leaving frame   | `hold-decays-not-resets`               |
+| 15  | OK sign                                     | `documents-accepted-G2-false-positive` |
 
-These JSON files become Phase 4's unit-test suite. Doc 03 §10.3: *this is what
+These JSON files become Phase 4's unit-test suite. Doc 03 §10.3: _this is what
 turns threshold tuning from a two-people-in-a-room loop into a ten-second loop,
-and it is the single highest-leverage piece of tooling in the project.*
+and it is the single highest-leverage piece of tooling in the project._
 
 ---
 

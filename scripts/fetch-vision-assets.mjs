@@ -123,7 +123,9 @@ async function copyWasm() {
     total += info.size;
   }
 
-  console.log(`  ✓ wasm/ (${files.length} files)${' '.repeat(10)}${fmt(total).padStart(9)}`);
+  console.log(
+    `  ✓ wasm/ (${files.length} files)${' '.repeat(10)}${fmt(total).padStart(9)}`,
+  );
   return total;
 }
 

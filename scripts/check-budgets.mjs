@@ -8,6 +8,12 @@
  * Run: node scripts/check-budgets.mjs
  * Exits non-zero on any breach.
  *
+ * Covers BOTH classes of budget in Doc 01 §8.2:
+ *   · static assets in public/  (models, wasm, audio, lottie)
+ *   · JAVASCRIPT, measured from the production build in .next/
+ * The second is the one that regresses silently — an asset is added
+ * deliberately, whereas a 40 KB dependency arrives as a transitive install.
+ *
  * ── KNOWN BREACH, PHASE 0 FINDING ────────────────────────────────────────
  * The MediaPipe vision runtime measures ~3.35 MB gzipped (3.28 WASM + 0.07
  * loader) against a 1.3 MB budget. This is recorded as R13 and is awaiting a
@@ -123,6 +129,160 @@ async function measure(relative, useGzip) {
   return total;
 }
 
+/**
+ * JavaScript budgets — Doc 01 §8.2.
+ *
+ * Measured GZIPPED from the real production build, because that is what the
+ * phone downloads.
+ *
+ * ── CHUNKS ARE IDENTIFIED BY CONTENT, NOT BY FILENAME ────────────────────
+ * Next names chunks by CONTENT HASH, so any rule that greps a filename for
+ * "three" or "scene3d" silently matches nothing and reports a pass. The route
+ * entry comes from `app-build-manifest.json`, which is authoritative about what
+ * a route downloads eagerly, and the lazy chunks are classified by looking for
+ * a marker symbol inside them.
+ *
+ * That also makes this check verify the `dynamic()` boundary itself: if
+ * three.js ever appears in the route entry, the entry budget blows immediately.
+ * ─────────────────────────────────────────────────────────────────────────
+ */
+const ROUTE_ENTRY_LIMIT = 140 * KB;
+const SCENE_3D_LIMIT = 450 * KB;
+const EXPERIENCE_ROUTE = '/d/[slug]/page';
+
+/** Marker symbols. Present in the bundled source of each library. */
+const THREE_MARKER = 'WebGLRenderer';
+const VISION_MARKER = 'wasm_internal';
+
+async function gzipOf(relative) {
+  const target = join(ROOT, '.next', relative);
+  if (!existsSync(target)) return 0;
+  return gzipSync(await readFile(target)).byteLength;
+}
+
+async function classifyChunks(eager) {
+  const dir = join(ROOT, '.next', 'static', 'chunks');
+  if (!existsSync(dir)) return [];
+
+  const found = [];
+
+  async function walk(base, prefix) {
+    for (const entry of await readdir(base, { withFileTypes: true })) {
+      const full = join(base, entry.name);
+      const name = prefix === '' ? entry.name : `${prefix}/${entry.name}`;
+      if (entry.isDirectory()) {
+        await walk(full, name);
+        continue;
+      }
+      if (extname(entry.name) !== '.js') continue;
+
+      const relative = `static/chunks/${name}`;
+      if (eager.has(relative)) continue;
+
+      const buffer = await readFile(full);
+      const text = buffer.toString('utf8');
+      found.push({
+        relative,
+        gzip: gzipSync(buffer).byteLength,
+        three: text.includes(THREE_MARKER),
+        vision: text.includes(VISION_MARKER),
+      });
+    }
+  }
+
+  await walk(dir, '');
+  return found;
+}
+
+async function checkJs() {
+  console.log('\nJavaScript budgets — Doc 01 §8.2\n');
+
+  const manifestPath = join(ROOT, '.next', 'app-build-manifest.json');
+  if (!existsSync(manifestPath)) {
+    console.log('  ·  no production build found — run `pnpm build` first');
+    return 0;
+  }
+
+  // `pnpm dev` overwrites .next with UNMINIFIED chunks. Measuring those would
+  // report a 1.7 MB entry budget and fail a build that is actually fine — a
+  // false alarm is worse than no alarm, because it teaches people to ignore the
+  // gate. Only a production build writes BUILD_ID.
+  const buildIdPath = join(ROOT, '.next', 'BUILD_ID');
+  const buildId = existsSync(buildIdPath)
+    ? (await readFile(buildIdPath, 'utf8')).trim()
+    : '';
+  if (buildId === '' || buildId === 'development') {
+    console.log('  ·  .next holds a DEVELOPMENT build — run `pnpm build`, then re-run');
+    console.log('  ·  JS budgets NOT measured');
+    return 0;
+  }
+
+  const manifest = JSON.parse(await readFile(manifestPath, 'utf8'));
+  const routeChunks = manifest.pages?.[EXPERIENCE_ROUTE];
+  if (!Array.isArray(routeChunks)) {
+    console.log(`  ✗  route ${EXPERIENCE_ROUTE} missing from the build manifest`);
+    return 1;
+  }
+
+  let failures = 0;
+
+  let entryTotal = 0;
+  for (const chunk of routeChunks) {
+    if (extname(chunk) !== '.js') continue;
+    entryTotal += await gzipOf(chunk);
+  }
+
+  const overEntry = entryTotal > ROUTE_ENTRY_LIMIT;
+  console.log(
+    `  ${overEntry ? '✗' : '✓'}  ${'route entry JS (no CV, no 3D)'.padEnd(46)} ` +
+      `${(fmt(entryTotal) + ' gz').padStart(11)} / ${fmt(ROUTE_ENTRY_LIMIT)}`,
+  );
+  if (overEntry) {
+    failures += 1;
+    console.log('     ↳ OVER BUDGET (Doc 01 §8.2)');
+  }
+
+  const eager = new Set();
+  for (const chunks of Object.values(manifest.pages ?? {})) {
+    for (const chunk of chunks) eager.add(chunk);
+  }
+
+  const lazy = await classifyChunks(eager);
+  const sceneTotal = lazy
+    .filter((chunk) => chunk.three)
+    .reduce((sum, chunk) => sum + chunk.gzip, 0);
+  const visionTotal = lazy
+    .filter((chunk) => chunk.vision)
+    .reduce((sum, chunk) => sum + chunk.gzip, 0);
+
+  if (sceneTotal === 0) {
+    failures += 1;
+    console.log(
+      `  ✗  ${'3D chunk (three + R3F + drei)'.padEnd(46)} not split out — check dynamic()`,
+    );
+  } else {
+    const overScene = sceneTotal > SCENE_3D_LIMIT;
+    console.log(
+      `  ${overScene ? '✗' : '✓'}  ${'3D chunk (three + R3F + drei)'.padEnd(46)} ` +
+        `${(fmt(sceneTotal) + ' gz').padStart(11)} / ${fmt(SCENE_3D_LIMIT)}`,
+    );
+    if (overScene) {
+      failures += 1;
+      console.log('     ↳ OVER BUDGET (Doc 01 §8.2)');
+    }
+  }
+
+  // Informational: the JS half of the vision runtime. Its transfer budget is
+  // dominated by the WASM, which the asset section already reports.
+  console.log(
+    `  ·  vision runtime JS ${fmt(visionTotal)} gz · ${String(routeChunks.length)} eager, ${String(
+      lazy.length,
+    )} lazy chunk(s)`,
+  );
+
+  return failures;
+}
+
 async function main() {
   console.log('\nAsset budgets — Doc 01 §8.2\n');
 
@@ -153,6 +313,8 @@ async function main() {
       console.log(`     ↳ over budget — non-blocking, see R13 in the Phase 0 report`);
     }
   }
+
+  failures += await checkJs();
 
   console.log('');
   if (warnings > 0) console.log(`  ${warnings} warning(s)`);

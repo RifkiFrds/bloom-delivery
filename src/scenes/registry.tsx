@@ -14,6 +14,24 @@
 import type { ComponentType } from 'react';
 
 import type { MachineEvent, State } from '@/machine';
+import { Bloom, Delivery } from './Delivery';
+import { Landing } from './Landing';
+import { LetterClosed, LetterOpen } from './Letter';
+import { Message } from './Message';
+import { Resting } from './Resting';
+import { Unlocking } from './Unlocking';
+import { LoadingDetection } from './LoadingDetection';
+import { SeekingFaces } from './SeekingFaces';
+import { SeekingGesture } from './SeekingGesture';
+import { SoloPrompt } from './SoloPrompt';
+import { TogetherConfirmed } from './TogetherConfirmed';
+import { Preflight } from './Preflight';
+import { RequestingCamera } from './RequestingCamera';
+import { BlockedEnvironment } from './errors/BlockedEnvironment';
+import { CameraDenied } from './errors/CameraDenied';
+import { CameraErrorScene } from './errors/CameraErrorScene';
+import { CameraInterrupted } from './errors/CameraInterrupted';
+import { FatalError } from './errors/FatalError';
 
 export interface SceneAction {
   readonly label: string;
@@ -50,12 +68,14 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
     note: 'In-app browser, insecure context, or no mediaDevices. Terminal-with-escape.',
     buildPhase: 2,
     actions: [skip],
+    component: BlockedEnvironment,
   },
   LANDING: {
     title: 'Bloom Delivery',
     note: 'Hook + audio unlock. The Start tap is the only reliable user gesture in the flow.',
     buildPhase: 2,
     actions: [{ label: 'Start', event: { type: 'START_TAPPED' }, emphasis: 'primary' }],
+    component: Landing,
   },
   PREFLIGHT: {
     title: 'Before we start',
@@ -64,11 +84,15 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
     actions: [
       { label: "I'm ready", event: { type: 'PREFLIGHT_CONTINUE' }, emphasis: 'primary' },
     ],
+    component: Preflight,
   },
   REQUESTING_CAMERA: {
     title: 'Ready when you are',
     note: 'getUserMedia in flight. Spinner-free.',
     buildPhase: 2,
+    // All six getUserMedia rejections are forceable from the debug panel: the
+    // Phase 2 exit criterion is that each produces its own screen, and a
+    // criterion that cannot be reached is not a criterion (Doc 05 §6).
     actions: [
       { label: 'granted', event: { type: 'PERMISSION_GRANTED' }, emphasis: 'primary' },
       { label: 'denied', event: { type: 'PERMISSION_DENIED' } },
@@ -77,7 +101,15 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
         label: 'NotReadableError',
         event: { type: 'CAMERA_FAILED', kind: 'NotReadableError' },
       },
+      {
+        label: 'OverconstrainedError',
+        event: { type: 'CAMERA_FAILED', kind: 'OverconstrainedError' },
+      },
+      { label: 'SecurityError', event: { type: 'CAMERA_FAILED', kind: 'SecurityError' } },
+      { label: 'AbortError', event: { type: 'CAMERA_FAILED', kind: 'AbortError' } },
+      { label: 'Unsupported', event: { type: 'CAMERA_FAILED', kind: 'Unsupported' } },
     ],
+    component: RequestingCamera,
   },
   CAMERA_DENIED: {
     title: "We can't see yet",
@@ -87,12 +119,14 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
       { label: 'Try again', event: { type: 'RETRY_CAMERA' }, emphasis: 'primary' },
       skip,
     ],
+    component: CameraDenied,
   },
   CAMERA_ERROR: {
     title: 'Camera trouble',
     note: 'Five non-denial failures, five copies. Retry only where retry works.',
     buildPhase: 2,
     actions: [{ label: 'Try again', event: { type: 'RETRY_CAMERA' } }, skip],
+    component: CameraErrorScene,
   },
   LOADING_DETECTION: {
     title: 'Warming up the magic',
@@ -102,6 +136,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
       { label: 'models ready', event: { type: 'MODELS_READY' }, emphasis: 'primary' },
       { label: 'models failed', event: { type: 'MODELS_FAILED' } },
     ],
+    component: LoadingDetection,
   },
   SEEKING_FACES: {
     title: 'Stand together',
@@ -112,6 +147,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
       { label: 'solo timeout', event: { type: 'SOLO_TIMEOUT' } },
       { label: 'track muted', event: { type: 'TRACK_MUTED' } },
     ],
+    component: SeekingFaces,
   },
   SOLO_PROMPT: {
     title: "Someone's missing",
@@ -126,6 +162,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
       { label: 'Peek alone', event: { type: 'PEEK_ALONE' }, emphasis: 'secondary' },
       { label: 'partner arrived', event: { type: 'FACES_ACQUIRED' } },
     ],
+    component: SoloPrompt,
   },
   TOGETHER_CONFIRMED: {
     title: 'There you are!',
@@ -135,6 +172,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
       { label: 'hand model ready', event: { type: 'HAND_MODEL_READY' } },
       { label: 'beat done', event: { type: 'SEQUENCE_STEP_DONE' }, emphasis: 'primary' },
     ],
+    component: TogetherConfirmed,
   },
   SEEKING_GESTURE: {
     title: 'Make a heart — one hand each',
@@ -151,6 +189,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
       { label: 'mercy 3', event: { type: 'MERCY_TICK', level: 3 } },
       { label: 'Let them out', event: { type: 'MERCY_UNLOCK' }, emphasis: 'secondary' },
     ],
+    component: SeekingGesture,
   },
   GESTURE_HOLDING: {
     title: 'Hold it…',
@@ -160,6 +199,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
       { label: 'hold complete', event: { type: 'HOLD_COMPLETE' }, emphasis: 'primary' },
       { label: 'gesture exit', event: { type: 'GESTURE_EXIT' } },
     ],
+    component: SeekingGesture,
   },
   CAMERA_INTERRUPTED: {
     title: 'Camera paused',
@@ -169,6 +209,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
       { label: 'Resume', event: { type: 'TRACK_RECOVERED' }, emphasis: 'primary' },
       skip,
     ],
+    component: CameraInterrupted,
   },
   UNLOCKING: {
     title: 'DELIVERY UNLOCKED',
@@ -177,6 +218,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
     actions: [
       { label: 'beat done', event: { type: 'SEQUENCE_STEP_DONE' }, emphasis: 'primary' },
     ],
+    component: Unlocking,
   },
   DELIVERY: {
     title: 'Delivery',
@@ -185,6 +227,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
     actions: [
       { label: 'beat done', event: { type: 'SEQUENCE_STEP_DONE' }, emphasis: 'primary' },
     ],
+    component: Delivery,
   },
   BLOOM: {
     title: 'Bloom',
@@ -193,6 +236,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
     actions: [
       { label: 'beat done', event: { type: 'SEQUENCE_STEP_DONE' }, emphasis: 'primary' },
     ],
+    component: Bloom,
   },
   MESSAGE: {
     title: 'For {name} 🌷',
@@ -201,6 +245,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
     actions: [
       { label: 'beat done', event: { type: 'SEQUENCE_STEP_DONE' }, emphasis: 'primary' },
     ],
+    component: Message,
   },
   LETTER_CLOSED: {
     title: 'Open Letter',
@@ -213,6 +258,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
         emphasis: 'primary',
       },
     ],
+    component: LetterClosed,
   },
   LETTER_OPEN: {
     title: 'The letter',
@@ -221,6 +267,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
     actions: [
       { label: 'settled', event: { type: 'SEQUENCE_STEP_DONE' }, emphasis: 'primary' },
     ],
+    component: LetterOpen,
   },
   RESTING: {
     title: 'Resting',
@@ -231,6 +278,7 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
       { label: 'Replay the moment', event: { type: 'REPLAY_TAPPED' } },
       { label: 'Save our photo', event: { type: 'SAVE_PHOTO_TAPPED' } },
     ],
+    component: Resting,
   },
   FATAL_ERROR: {
     title: 'Something wobbled',
@@ -243,5 +291,6 @@ export const SCENES: Readonly<Record<State, SceneDescriptor>> = {
         emphasis: 'primary',
       },
     ],
+    component: FatalError,
   },
 };

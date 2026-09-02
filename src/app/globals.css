@@ -44,6 +44,24 @@ body::before {
   opacity: 0.3;
 }
 
+/**
+ * The global grain — Doc 04 §A.7. One overlay at 3%, `multiply`.
+ *
+ * An inline SVG turbulence data URI rather than a PNG: it costs no network
+ * request on the screen with the tightest LCP budget in the project, and a
+ * texture file would be the only decorative asset in the entire product.
+ */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  opacity: 0.03;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
 h1,
 h2,
 h3 {
@@ -86,6 +104,108 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+}
+
+/**
+ * The coaching HUD's two tones — Doc 04 §B.9.
+ *
+ * `ALMOST` is the only coaching state with its own visual treatment, because it
+ * is the only one that tells the user their gesture is WORKING. Driven by a
+ * `data-tone` attribute written from the detection rAF, so changing it costs no
+ * React commit.
+ */
+.coach-card[data-tone='normal'] {
+  background-color: var(--color-cream);
+}
+
+.coach-card[data-tone='almost'] {
+  background-color: var(--color-yellow);
+  animation: coach-pulse 900ms ease-in-out infinite;
+}
+
+@keyframes coach-pulse {
+  0%,
+  100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.02);
+  }
+}
+
+/**
+ * Framing reticles — Doc 04 §B.6.
+ *
+ * Empty: a gentle pulse. Matched: snaps solid green with a 240 ms spring-like
+ * settle. Both driven by a `data-matched` attribute written from the detection
+ * rAF, so a face arriving costs zero React commits.
+ */
+.reticle {
+  stroke: var(--color-white);
+  opacity: 0.75;
+  transition:
+    stroke 240ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    opacity 240ms ease-out;
+  animation: reticle-breathe 2200ms ease-in-out infinite;
+}
+
+.reticle[data-matched='yes'] {
+  stroke: var(--color-green);
+  opacity: 1;
+  animation: none;
+}
+
+@keyframes reticle-breathe {
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.9;
+  }
+}
+
+/* Person chips — a liquid rise as each face registers (Doc 04 §B.6). */
+.person-chips .chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: 3px solid var(--color-ink);
+  border-radius: 16px;
+  background-color: var(--color-white);
+  box-shadow: 2px 2px 0 #111111;
+  font-size: 20px;
+  filter: grayscale(1);
+  opacity: 0.5;
+  transition:
+    background-color 320ms ease-out,
+    filter 320ms ease-out,
+    opacity 320ms ease-out,
+    transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.person-chips[data-count='1'] .chip[data-index='0'],
+.person-chips[data-count='2'] .chip {
+  background-color: var(--color-green);
+  filter: none;
+  opacity: 1;
+  transform: translateY(-2px);
+}
+
+/* Loading dots — 400 ms, 80 ms stagger (Doc 04 §B.5). */
+.loader-dot {
+  animation: loader-bounce 400ms ease-in-out infinite alternate;
+}
+
+@keyframes loader-bounce {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-6px);
   }
 }
 

@@ -16,6 +16,8 @@
 import { useEffect } from 'react';
 import { MotionConfig } from 'motion/react';
 
+import { registerEffectHandlers } from './effects';
+import { DebugHUD } from '@/components/DebugHUD';
 import { DebugPanel } from '@/components/DebugPanel';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { bus } from '@/events/bus';
@@ -26,6 +28,10 @@ import { SCENES } from '@/scenes/registry';
 import { selectMotionSafe, selectState, useMachineStore } from '@/store/machineStore';
 
 export default function ExperienceRoot(): React.ReactElement {
+  // Registered before the first event can be emitted. Idempotent, so the
+  // double render StrictMode performs in development is harmless.
+  registerEffectHandlers();
+
   const state = useMachineStore(selectState);
   const motionSafe = useMachineStore(selectMotionSafe);
 
@@ -79,6 +85,7 @@ export default function ExperienceRoot(): React.ReactElement {
         <div id="sr-status" role="status" aria-live="polite" className="sr-only" />
         <div id="sr-alert" role="alert" aria-live="assertive" className="sr-only" />
 
+        <DebugHUD />
         <DebugPanel />
       </ErrorBoundary>
     </MotionConfig>

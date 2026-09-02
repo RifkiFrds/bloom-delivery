@@ -27,3 +27,5 @@ Thumbs.db
 # Phase 0 measurement output
 tools/spike/reports/
 tools/spike/fixtures/
+
+certificates

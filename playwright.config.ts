@@ -1,9 +1,15 @@
 import { defineConfig, devices } from '@playwright/test';
 
 /**
- * Phase 9 uses `--use-file-for-fake-video-capture` to drive the detection
- * stages from a recorded clip. Scaffolded now so the harness exists; the smoke
- * spec itself is written at Phase 9.
+ * End-to-end harness — Doc 05 §12.
+ *
+ * Two projects, because reduced motion is a REQUIREMENT rather than a variant:
+ * Doc 04 §C.5 says content is never removed, only motion, and the only way to
+ * know that holds is to run the whole suite with it on.
+ *
+ * `--use-file-for-fake-video-capture` can drive the detection stages from a
+ * recorded clip once the Phase 0 fixture clips exist; the fake device is used
+ * until then, which exercises the permission path but produces no faces.
  */
 export default defineConfig({
   testDir: './tests/e2e',
@@ -20,6 +26,18 @@ export default defineConfig({
       name: 'chromium',
       use: {
         ...devices['Desktop Chrome'],
+        launchOptions: {
+          args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
+        },
+      },
+    },
+    {
+      name: 'chromium-reduced-motion',
+      use: {
+        ...devices['Desktop Chrome'],
+        // `reducedMotion` is a browser-context option, not a top-level `use`
+        // key, in Playwright 1.62.
+        contextOptions: { reducedMotion: 'reduce' },
         launchOptions: {
           args: ['--use-fake-ui-for-media-stream', '--use-fake-device-for-media-stream'],
         },

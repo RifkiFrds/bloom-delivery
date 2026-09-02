@@ -115,7 +115,7 @@ describe('illegal transitions', () => {
   it('reports guard rejection distinctly from a missing row', () => {
     const messages: string[] = [];
     // The row exists, but canSeekGesture fails without the hand model.
-    reduce(
+    const result = reduce(
       'TOGETHER_CONFIRMED',
       ctx({ togetherConfirmed: true }),
       {
@@ -124,7 +124,30 @@ describe('illegal transitions', () => {
       { onIllegal: (m) => messages.push(m) },
     );
 
-    expect(messages[0]).toMatch(/every guard rejected/);
+    expect(result.outcome).toBe('guarded');
+    expect(messages[0]).toMatch(/Guard rejected/);
+  });
+
+  /**
+   * A guard doing its job is not a programming error. If it threw, `canUnlock`
+   * swallowing a second HOLD_COMPLETE — the entire point of the latch — would
+   * crash the app in development.
+   */
+  it('does NOT throw in strict mode when a guard rejects', () => {
+    expect(() =>
+      reduce(
+        'GESTURE_HOLDING',
+        ctx({ hasUnlocked: true }),
+        { type: 'HOLD_COMPLETE' },
+        { strict: true },
+      ),
+    ).not.toThrow();
+  });
+
+  it('DOES throw in strict mode when no row exists', () => {
+    expect(() =>
+      reduce('LANDING', ctx(), { type: 'HOLD_COMPLETE' }, { strict: true }),
+    ).toThrow(/no row/);
   });
 });
 
@@ -251,5 +274,108 @@ describe('replay', () => {
     });
     expect(replay.state).toBe('UNLOCKING');
     expect(replay.context.skipCameraStage).toBe(true);
+  });
+});
+
+/**
+ * ★ REGRESSION: events that arrive in a state the table did not anticipate ★
+ *
+ * A runtime crash — `Illegal transition: no row for (SEEKING_FACES,
+ * HAND_MODEL_READY)` — came from the §5 table listing `HAND_MODEL_READY` only
+ * under `TOGETHER_CONFIRMED`. The 7.5 MB model is prefetched at
+ * `PREFLIGHT_CONTINUE`, so on a fast connection it lands long before the
+ * two-face latch closes.
+ *
+ * These tests pin every ASYNCHRONOUS fact against every state it can plausibly
+ * arrive in. Each one failed before the fix.
+ */
+describe('asynchronous facts must be legal wherever they land', () => {
+  const CAMERA_STAGES: readonly State[] = [
+    'REQUESTING_CAMERA',
+    'LOADING_DETECTION',
+    'SEEKING_FACES',
+    'SOLO_PROMPT',
+    'TOGETHER_CONFIRMED',
+    'SEEKING_GESTURE',
+    'GESTURE_HOLDING',
+    'CAMERA_INTERRUPTED',
+  ];
+
+  it.each(CAMERA_STAGES)('HAND_MODEL_READY is legal in %s', (state) => {
+    const result = reduce(state, ctx(), { type: 'HAND_MODEL_READY' }, { strict: true });
+    expect(result.outcome).toBe('taken');
+    expect(result.state).toBe(state);
+    // The whole point: the latch is recorded wherever the event lands. Dropping
+    // it would leave `canSeekGesture` false forever.
+    expect(result.context.handModelReady).toBe(true);
+  });
+
+  /**
+   * The mercy timer keeps running while the user is mid-hold, so crossing 20 s,
+   * 45 s or 90 s during a hold is ordinary. Doc 02 §2.13 lists MERCY_TICK among
+   * the events GESTURE_HOLDING handles; the §5 row omitted the state.
+   */
+  it.each(['SEEKING_GESTURE', 'GESTURE_HOLDING'] as const)(
+    'MERCY_TICK is legal in %s',
+    (state) => {
+      const result = reduce(
+        state,
+        ctx({ mercyLevel: 0 }),
+        { type: 'MERCY_TICK', level: 2 },
+        { strict: true },
+      );
+      expect(result.outcome).toBe('taken');
+      expect(result.state).toBe(state);
+      expect(result.context.mercyLevel).toBe(2);
+    },
+  );
+
+  it('MERCY_TICK for a level already reached is a guarded no-op, not a crash', () => {
+    const result = reduce(
+      'GESTURE_HOLDING',
+      ctx({ mercyLevel: 3 }),
+      { type: 'MERCY_TICK', level: 1 },
+      { strict: true },
+    );
+    expect(result.outcome).toBe('guarded');
+  });
+
+  /**
+   * `TRACK_ENDED` now precedes the automatic re-acquisition, so the recovery
+   * resolves while the machine is already in CAMERA_INTERRUPTED — the only
+   * state where TRACK_RECOVERED is legal.
+   */
+  it('TRACK_RECOVERED is legal in CAMERA_INTERRUPTED', () => {
+    const result = reduce(
+      'CAMERA_INTERRUPTED',
+      ctx({ interruptedFrom: 'SEEKING_FACES' }),
+      { type: 'TRACK_RECOVERED' },
+      { strict: true },
+    );
+    expect(result.outcome).toBe('taken');
+    expect(result.state).toBe('SEEKING_FACES');
+  });
+
+  /**
+   * The camera runtime must never emit these outside the one state that accepts
+   * them. Asserted as ILLEGAL on purpose: if a future change starts emitting
+   * `PERMISSION_GRANTED` from a recovery again, this fails rather than the app.
+   */
+  it.each(['SEEKING_FACES', 'CAMERA_INTERRUPTED', 'LOADING_DETECTION'] as const)(
+    'PERMISSION_GRANTED remains illegal in %s',
+    (state) => {
+      expect(() =>
+        reduce(state, ctx(), { type: 'PERMISSION_GRANTED' }, { strict: true }),
+      ).toThrow(/no row/);
+    },
+  );
+
+  it('TRACK_ENDED is legal in every camera-bearing state', () => {
+    for (const state of CAMERA_STAGES) {
+      if (state === 'REQUESTING_CAMERA' || state === 'CAMERA_INTERRUPTED') continue;
+      const result = reduce(state, ctx(), { type: 'TRACK_ENDED' }, { strict: true });
+      expect(result.state, state).toBe('CAMERA_INTERRUPTED');
+      expect(result.context.interruptedFrom, state).toBe(state);
+    }
   });
 });

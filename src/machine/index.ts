@@ -16,5 +16,8 @@ export type { Transition, Target } from './transitions';
 export { EffectRunner } from './effects';
 export type { Effect, AssetBundle, PersistKey, TimerId, EffectHandler } from './effects';
 
+export { entryEffects } from './entry';
+export * from './timing';
+
 export { reduce } from './reducer';
 export type { ReduceResult, ReduceOptions } from './reducer';

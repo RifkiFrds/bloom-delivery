@@ -1,33 +1,18 @@
 /**
  * Next configuration — PRD v2 §Security & Privacy.
  *
- * ── THE PRIVACY GUARANTEE, ENFORCED ──────────────────────────────────────
- * `connect-src 'self'` is what makes "your camera stays on your phone" true
- * rather than aspirational. Zero fetch / XHR / WebSocket / sendBeacon to any
- * other origin, structurally. This is also why the MediaPipe runtime and models
- * are self-hosted and why fonts come from next/font rather than a CDN.
- * ─────────────────────────────────────────────────────────────────────────
+ * ── THE CSP LIVES IN `src/middleware.ts`, NOT HERE ───────────────────────
+ * It needs a per-request nonce, because Next's App Router emits inline scripts
+ * carrying the RSC flight payload and `script-src 'self'` blocks them — which
+ * left the application permanently un-hydrated. A static header cannot carry a
+ * nonce, so the policy moved to middleware. See that file for the full
+ * reasoning.
  *
- * `wasm-unsafe-eval` is required by MediaPipe and is the one concession.
+ * Everything below is a header whose value does not vary per request.
+ * ─────────────────────────────────────────────────────────────────────────
  */
 
-const csp = [
-  "default-src 'self'",
-  "script-src 'self' 'wasm-unsafe-eval'" +
-    (process.env.NODE_ENV === 'development' ? " 'unsafe-eval'" : ''),
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "media-src 'self' blob:",
-  "font-src 'self'",
-  "connect-src 'self'",
-  "worker-src 'self' blob:",
-  "frame-ancestors 'none'",
-  "base-uri 'self'",
-  "form-action 'none'",
-].join('; ');
-
 const securityHeaders = [
-  { key: 'Content-Security-Policy', value: csp },
   {
     key: 'Permissions-Policy',
     value: 'camera=(self), microphone=(), geolocation=(), payment=()',

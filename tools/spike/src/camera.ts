@@ -91,7 +91,10 @@ export async function acquireCamera(video: HTMLVideoElement): Promise<CameraHand
     );
   }
   if (typeof navigator.mediaDevices?.getUserMedia !== 'function') {
-    throw new CameraError('Unsupported', 'navigator.mediaDevices.getUserMedia is unavailable.');
+    throw new CameraError(
+      'Unsupported',
+      'navigator.mediaDevices.getUserMedia is unavailable.',
+    );
   }
 
   let stream: MediaStream;
@@ -127,7 +130,12 @@ export async function acquireCamera(video: HTMLVideoElement): Promise<CameraHand
 function waitForFirstFrame(video: HTMLVideoElement): Promise<void> {
   return new Promise((resolve, reject) => {
     const timeout = window.setTimeout(() => {
-      reject(new CameraError('AbortError', 'Timed out waiting for the first camera frame (8 s).'));
+      reject(
+        new CameraError(
+          'AbortError',
+          'Timed out waiting for the first camera frame (8 s).',
+        ),
+      );
     }, 8000);
 
     const finish = (): void => {

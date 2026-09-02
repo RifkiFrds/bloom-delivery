@@ -1,6 +1,11 @@
 packages:
   - 'tools/*'
 
+# pnpm 11 reads overrides here, not from package.json.
+overrides:
+  react: 19.2.8
+  react-dom: 19.2.8
+
 # esbuild ships a platform binary that Vite requires at dev-server start.
 allowBuilds:
   esbuild: true

@@ -28,7 +28,7 @@ export function ScenePlaceholder({ state }: ScenePlaceholderProps): React.ReactE
       className="mx-auto flex w-full max-w-[480px] flex-col gap-4 px-5 py-8"
       aria-labelledby="scene-title"
     >
-      <div className="rounded-[--radius-lg] border-3 border-ink bg-white p-6 shadow-[6px_6px_0_#111111]">
+      <div className="rounded-[28px] border-3 border-ink bg-white p-6 shadow-[6px_6px_0_#111111]">
         <p className="font-mono text-xs tracking-wide text-ink/70">
           {state} · phase {scene.buildPhase}
         </p>
@@ -49,7 +49,7 @@ export function ScenePlaceholder({ state }: ScenePlaceholderProps): React.ReactE
                   bus.emit(action.event);
                 }}
                 className={[
-                  'interactive min-h-[48px] rounded-[--radius-md] border-3 border-ink px-5',
+                  'interactive min-h-[48px] rounded-[20px] border-3 border-ink px-5',
                   'font-display text-[15px] text-ink transition-transform',
                   'active:translate-x-[3px] active:translate-y-[3px]',
                   action.emphasis === 'primary'

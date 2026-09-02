@@ -118,7 +118,11 @@ function runTick(context: TickContext): number {
 
   // ── Normalize (Doc 03 §2.1) ────────────────────────────────────────────────
   const faces: FaceBox[] = (faceResult?.detections ?? []).map((detection) => {
-    const box = correctFaceBox(detection.boundingBox ?? { originX: 0, originY: 0, width: 0, height: 0 }, video.videoWidth, factor);
+    const box = correctFaceBox(
+      detection.boundingBox ?? { originX: 0, originY: 0, width: 0, height: 0 },
+      video.videoWidth,
+      factor,
+    );
     return { ...box, score: detection.categories[0]?.score ?? 0 };
   });
 
@@ -129,7 +133,13 @@ function runTick(context: TickContext): number {
   // ── Face gate ──────────────────────────────────────────────────────────────
   luma.update(video, started);
   const relaxed = mercyLevel >= MERCY.acceptsFingerHeartFrom;
-  const gate = faceGate.update(faces, context.dtMs, relaxed, context.runFaceInference, started);
+  const gate = faceGate.update(
+    faces,
+    context.dtMs,
+    relaxed,
+    context.runFaceInference,
+    started,
+  );
 
   if (gate.justLatched) {
     measurement.recordLatch(started);
@@ -305,7 +315,9 @@ async function start(): Promise<void> {
         setStatus('running');
       })
       .catch((error: unknown) => {
-        note(`hand model FAILED: ${error instanceof Error ? error.message : String(error)}`);
+        note(
+          `hand model FAILED: ${error instanceof Error ? error.message : String(error)}`,
+        );
         setStatus('hand model failed — face stage only');
       });
 
@@ -379,7 +391,10 @@ mercySelect.addEventListener('change', () => {
 });
 
 window.addEventListener('keydown', (event) => {
-  if (event.target instanceof HTMLInputElement || event.target instanceof HTMLSelectElement) {
+  if (
+    event.target instanceof HTMLInputElement ||
+    event.target instanceof HTMLSelectElement
+  ) {
     return;
   }
   switch (event.key.toLowerCase()) {
@@ -401,7 +416,8 @@ window.addEventListener('keydown', (event) => {
       break;
     case 'e': {
       const name = window.prompt('fixture name (e.g. 08-clasped-hands)') ?? 'fixture';
-      const expectation = window.prompt('expectation (accept / reject-C5 / …)') ?? 'unknown';
+      const expectation =
+        window.prompt('expectation (accept / reject-C5 / …)') ?? 'unknown';
       downloadJson(`${name}.fixture.json`, measurement.buildFixture(name, expectation));
       note(`exported fixture ${name}`);
       break;

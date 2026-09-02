@@ -22,14 +22,17 @@
     "vision:fetch": "node scripts/fetch-vision-assets.mjs",
     "budgets": "node scripts/check-budgets.mjs",
     "spike": "pnpm --dir tools/spike dev",
-    "verify": "pnpm typecheck && pnpm lint && pnpm test"
+    "verify": "pnpm typecheck && pnpm lint && pnpm test && pnpm budgets",
+    "fixtures": "node scripts/dump-landmarks.mjs"
   },
   "dependencies": {
+    "@mediapipe/tasks-vision": "1.0.1",
+    "howler": "2.2.4",
+    "motion": "13.1.1",
     "next": "15.5.25",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "zustand": "5.0.15",
-    "motion": "13.1.1"
+    "zustand": "5.0.15"
   },
   "devDependencies": {
     "@eslint/js": "9.39.5",
@@ -38,6 +41,7 @@
     "@react-three/drei": "10.7.8",
     "@react-three/fiber": "9.7.0",
     "@tailwindcss/postcss": "4.3.3",
+    "@types/howler": "2.2.13",
     "@types/node": "24.10.4",
     "@types/react": "19.2.18",
     "@types/react-dom": "19.2.5",
@@ -52,11 +56,5 @@
     "typescript": "5.9.3",
     "typescript-eslint": "8.69.0",
     "vitest": "3.2.7"
-  },
-  "pnpm": {
-    "overrides": {
-      "react": "19.2.8",
-      "react-dom": "19.2.8"
-    }
   }
 }

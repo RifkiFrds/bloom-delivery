@@ -134,7 +134,8 @@ export class Measurement implements MeasurementSummary {
 
   private rate(kind: TrialKind, lighting?: Lighting): { n: number; rate: number } {
     const scoped = this.trials.filter(
-      (trial) => trial.kind === kind && (lighting === undefined || trial.lighting === lighting),
+      (trial) =>
+        trial.kind === kind && (lighting === undefined || trial.lighting === lighting),
     );
     if (scoped.length === 0) return { n: 0, rate: 0 };
     const passed = scoped.filter((trial) => trial.passed).length;
@@ -207,8 +208,8 @@ export class Measurement implements MeasurementSummary {
         withinTargetRate:
           this.latchTimings.length === 0
             ? 0
-            : this.latchTimings.filter((v) => v <= EXIT_CRITERIA.faceLatchWithinMs).length /
-              this.latchTimings.length,
+            : this.latchTimings.filter((v) => v <= EXIT_CRITERIA.faceLatchWithinMs)
+                .length / this.latchTimings.length,
       },
       trials: this.trials,
       rates: {

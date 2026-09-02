@@ -15,6 +15,7 @@
 
 import type { MachineContext } from './context';
 import type { Effect } from './effects';
+import { entryEffects } from './entry';
 import type { MachineEvent } from './events';
 import { evaluateGuard } from './guards';
 import type { State } from './states';
@@ -24,14 +25,24 @@ export interface ReduceResult {
   readonly state: State;
   readonly context: MachineContext;
   readonly effects: readonly Effect[];
-  /** False when the (state, event) pair had no matching row. */
+  /** False when no row was taken. See `outcome` for why. */
   readonly handled: boolean;
+  /**
+   * `taken`    a row matched and was applied.
+   * `guarded`  rows exist for this pair but every guard rejected. LEGAL — a
+   *            no-op, e.g. a second `HOLD_COMPLETE` after `hasUnlocked`, or
+   *            `SEQUENCE_STEP_DONE` in `TOGETHER_CONFIRMED` before the hand
+   *            model is ready.
+   * `illegal`  no row exists for this pair at all. Doc 02 §5: dev throws,
+   *            production records and returns unchanged.
+   */
+  readonly outcome: 'taken' | 'guarded' | 'illegal';
 }
 
 export interface ReduceOptions {
-  /** Throw on an illegal pair. True in development, false in production. */
+  /** Throw on an ILLEGAL pair. True in development, false in production. */
   readonly strict?: boolean;
-  /** Receives a description of every illegal pair. */
+  /** Receives a description of every illegal pair and every guard rejection. */
   readonly onIllegal?: (message: string) => void;
 }
 
@@ -69,19 +80,36 @@ export function reduce(
       transition.guard === 'canUnlock' ? { hasUnlocked: true } : {};
 
     const nextContext: MachineContext = { ...context, ...patch, ...unlockPatch };
-    const effects =
+    const transitionEffects =
       transition.effects?.({ context: nextContext, event, from: state }) ?? [];
 
-    return { state: next, context: nextContext, effects, handled: true };
+    // Entry effects belong to the STATE, so every path into it performs them.
+    // `to: 'self'` is not a re-entry and must not re-run them.
+    const effects =
+      next === state ? transitionEffects : [...transitionEffects, ...entryEffects(next)];
+
+    return {
+      state: next,
+      context: nextContext,
+      effects,
+      handled: true,
+      outcome: 'taken',
+    };
   }
 
-  const message =
-    candidates.length === 0
-      ? `Illegal transition: no row for (${state}, ${event.type})`
-      : `Illegal transition: every guard rejected (${state}, ${event.type})`;
+  // ── Guard-rejected is LEGAL. Illegal is a missing row. ───────────────────
+  // Conflating the two would make `canUnlock` doing its job — swallowing a
+  // second HOLD_COMPLETE in the same tick — throw in development, which is the
+  // opposite of what the idempotency latch exists to achieve.
+  if (candidates.length > 0) {
+    const message = `Guard rejected (${state}, ${event.type}) — no transition`;
+    options.onIllegal?.(message);
+    return { state, context, effects: [], handled: false, outcome: 'guarded' };
+  }
 
+  const message = `Illegal transition: no row for (${state}, ${event.type})`;
   options.onIllegal?.(message);
   if (options.strict === true) throw new Error(message);
 
-  return { state, context, effects: [], handled: false };
+  return { state, context, effects: [], handled: false, outcome: 'illegal' };
 }
