@@ -12,7 +12,7 @@ on hardware before it is sent.
 | 1 | **Write the letter.** `src/content/letter.ts` → `LETTER_PLAIN`. Set `LETTER_LANG` to the language you actually wrote in. | It is the point of the project and the cheapest thing in it. A screen reader will pronounce Indonesian with an English voice if `lang` is wrong. |
 | 2 | **Set the recipient's name.** Either hardcode it in `content/copy.ts`'s usage, or pass `?to=Name`. | `?to=` is Unicode-aware, capped at 24 characters, rendered as a text node. |
 | 3 | **Choose the URL slug.** Deploy at `/d/<something-unguessable>`. | URL secrecy is the actual access control. The root path is a neutral placeholder and links nowhere. |
-| 4 | **Supply the audio** (optional). `public/audio/sfx-sprite.{webm,m4a}` and `music.{webm,m4a}`. Offsets are fixed in `src/audio/sprite.ts`. | Without them the experience runs SILENT, which is a supported outcome — all sound is decorative. Confirm the music licence before shipping. |
+| 4 | **Supply the audio** (optional). `public/audio/sfx-sprite.{webm,m4a,mp3}` and `music.{webm,m4a,mp3}`. Offsets are fixed in `src/audio/sprite.ts`; SFX must be one sprite file. | Without them the experience runs SILENT, which is a supported outcome — all sound is decorative. Confirm the music licence before shipping. |
 
 ---
 

@@ -48,7 +48,12 @@ const BUNDLE_URLS: Readonly<Record<AssetBundle, readonly string[]>> = {
   // The 3D chunk is JavaScript, prefetched by a dynamic import rather than a
   // URL fetch — see `noteChunkPrefetch`.
   'scene-3d': [],
-  audio: ['/audio/sfx-sprite.webm', '/audio/music.webm'],
+  audio: [
+    '/audio/sfx-sprite.webm',
+    '/audio/music.webm',
+    '/audio/sfx-sprite.mp3',
+    '/audio/music.mp3',
+  ],
 };
 
 const progress = new Map<AssetBundle, BundleProgress>();

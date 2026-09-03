@@ -22,6 +22,7 @@
  */
 
 import { record } from '@/lib/diagnostics';
+import { Howler } from 'howler';
 
 /**
  * `window.AudioContext` is typed as always present, and genuinely is not — it is
@@ -67,6 +68,19 @@ export function unlockAudio(): boolean {
 
   // Fire-and-forget: awaiting would leave the user-activation window.
   void context.resume();
+
+  // Howler owns a separate AudioContext. Resume and prime it in the same
+  // gesture, otherwise a music request that finishes loading later can be
+  // blocked by the browser's autoplay policy.
+  if (Howler.ctx.state === 'suspended') void Howler.ctx.resume();
+  try {
+    const howlerSource = Howler.ctx.createBufferSource();
+    howlerSource.buffer = Howler.ctx.createBuffer(1, 1, 22_050);
+    howlerSource.connect(Howler.ctx.destination);
+    howlerSource.start(0);
+  } catch {
+    // Resuming the context is enough on browsers that reject silent priming.
+  }
 
   try {
     const buffer = context.createBuffer(1, 1, 22_050);

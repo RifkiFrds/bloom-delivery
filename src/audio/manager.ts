@@ -51,6 +51,7 @@ class AudioManager {
   private sfxReady = false;
   private musicReady = false;
   private loadStarted = false;
+  private musicRequested = false;
 
   /**
    * Begins loading. Called from the `assets.prefetch` effect for the `audio`
@@ -85,6 +86,7 @@ class AudioManager {
       onload: () => {
         this.musicReady = true;
         record('audio: music ready');
+        if (this.musicRequested) this.playMusic(800);
       },
       onloaderror: () => {
         record('audio: music unavailable — running silent');
@@ -133,6 +135,7 @@ class AudioManager {
 
   /** Doc 04 §D.3 — an 800 ms fade-in. Never starts at full volume. */
   playMusic(fadeMs: number): void {
+    this.musicRequested = true;
     if (!this.musicReady || this.music === null) return;
     if (!this.music.playing()) this.music.play();
     this.music.fade(0, this.muted ? 0 : MUSIC_VOLUME, fadeMs);

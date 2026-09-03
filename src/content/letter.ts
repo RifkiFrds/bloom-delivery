@@ -40,13 +40,13 @@ export const LETTER_LANG = 'en';
  */
 export const LETTER_PLAIN = `I made you a thing.
 
-It only opens for two people, which felt right — because most of what I want to say is about the fact that there are two of us.
+ak buat ini only for u, and I hope you like it. I hope you like it because I like you. I like you a lot.
 
-I like who I am when you are in the room. I like that you laugh before the end of the sentence. I like that we can spend an entire evening doing nothing in particular and I would not trade it for anywhere else.
+i like who I am when you are in the room. thank you km sudah datang di waktu yang tepat, aku harap pertemuan ini bukan yang terakhir!
 
-Thank you for the ordinary days. They are my favourite ones.
+thank you for quality time. They are my favourite ones.
 
-Here are some flowers that will not wilt.`;
+here are some flowers that will not wilt.`;
 
 /** Set at ship time. An empty string means "use LETTER_PLAIN". */
 export const LETTER_PAYLOAD = '';

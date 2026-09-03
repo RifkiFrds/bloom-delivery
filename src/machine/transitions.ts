@@ -138,6 +138,8 @@ export const TRANSITIONS: readonly Transition[] = [
     // audio.unlock MUST run synchronously inside the click handler.
     effects: () => [
       { kind: 'audio.unlock' },
+      { kind: 'assets.prefetch', bundle: 'audio' },
+      { kind: 'audio.play', track: 'music', fadeMs: MUSIC_FADE_MS },
       { kind: 'assets.prefetch', bundle: 'vision-runtime' },
       { kind: 'assets.prefetch', bundle: 'face-model' },
     ],

@@ -42,9 +42,17 @@ export const SFX_SPRITE: Readonly<
 };
 
 /** Ordered by preference. Howler takes the first the browser can decode. */
-export const SFX_SOURCES = ['/audio/sfx-sprite.webm', '/audio/sfx-sprite.m4a'] as const;
+export const SFX_SOURCES = [
+  '/audio/sfx-sprite.webm',
+  '/audio/sfx-sprite.m4a',
+  '/audio/sfx-sprite.mp3',
+] as const;
 
-export const MUSIC_SOURCES = ['/audio/music.webm', '/audio/music.m4a'] as const;
+export const MUSIC_SOURCES = [
+  '/audio/music.webm',
+  '/audio/music.m4a',
+  '/audio/music.mp3',
+] as const;
 
 /** Doc 04 §D.3 — never starts at full volume; users may be in public. */
 export const MUSIC_VOLUME = 0.55;
