@@ -222,7 +222,14 @@ Taruh di `public/audio/`:
 - `sfx-sprite.webm` + `sfx-sprite.m4a`
 - `music.webm` + `music.m4a`
 
-Titik waktu spritenya sudah ditentukan di `src/audio/sprite.ts`.
+Fallback MP3 juga didukung:
+
+- `sfx-sprite.mp3`
+- `music.mp3`
+
+Untuk SFX, gunakan satu file `sfx-sprite.mp3` yang berisi enam suara sesuai
+titik waktu yang sudah ditentukan di `src/audio/sprite.ts`. Jangan menaruh enam
+MP3 terpisah karena aplikasi memutarnya sebagai audio sprite.
 
 **Kalau file ini tidak ada, aplikasi berjalan tanpa suara** dan itu memang
 perilaku yang dirancang — semua suara di sini sifatnya dekoratif, tidak ada
